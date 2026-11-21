@@ -1,0 +1,15 @@
+{
+  "name": "academy-website",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": ["frontend", "backend", "shared"],
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev:frontend": "npm run dev --workspace=@academy/frontend",
+    "dev:backend": "npm run dev --workspace=@academy/backend",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces"
+  }
+}

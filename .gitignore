@@ -1,0 +1,16 @@
+node_modules/
+.next/
+dist/
+*.tsbuildinfo
+frontend/next-env.d.ts
+.npm-cache/
+.local/
+
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.aws/
+.codex/
+.agents/
