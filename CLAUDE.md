@@ -141,6 +141,8 @@ Row Level Security is **enabled on every table with no policies**. Only the back
 
 ## 10. Conventions
 
+- Commit each small, coherent change separately with a descriptive message.
+
 - Database columns are snake_case. TypeScript uses camelCase. Convert in the data access layer.
 - Validate all input at the route boundary. Reject unknown fields where it matters.
 - Return errors in one consistent shape with proper HTTP status codes. Do not leak internal details.
