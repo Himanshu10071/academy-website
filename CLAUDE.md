@@ -17,7 +17,7 @@ A website for a coaching academy that sells **recorded video courses**. Students
 |---|---|
 | Frontend | Next.js + TypeScript |
 | Backend | Node.js + Express + TypeScript, a persistent server (not serverless) |
-| Database | PostgreSQL on Supabase |
+| Database | PostgreSQL on Supabase via the Node.js `pg` driver. Use the session pooler on IPv4 networks. Disable the Supabase Data API. |
 | Authentication | Supabase Auth, **Google provider only** |
 | Video storage | AWS S3, private bucket |
 | Video delivery | AWS CloudFront with Origin Access Control and signed URLs |
@@ -41,7 +41,7 @@ Why the backend is separate from Next.js: the payment webhook needs an always-av
 1. **Three layers inside each backend feature, with separate jobs:**
    - Routes: receive the request, validate its shape, call a service, return the response. No business rules here.
    - Services: all business rules (access, refund window, publishing rules). No direct SQL here.
-   - Data access: the only code that talks to the database.
+   - Data access: the only code that talks to PostgreSQL. Use parameterized SQL. For multi-step writes, run the entire transaction on one checked-out connection.
 2. Business rules are small, pure functions where possible, so they can be tested without a server.
 3. Keep it a simple modular monolith. Do not add queues, microservices, or extra infrastructure unless asked.
 4. Status values (`pending`, `paid`, `captured`, and so on) are defined once in `shared/` and imported everywhere. Never retype them as strings.
@@ -87,7 +87,7 @@ Key constraints the database enforces:
 - Money is an integer in paise. Durations are integers in seconds. Ids are uuids. Timestamps are timestamptz in UTC.
 - Foreign keys to financial or historical rows restrict deletion. Hide or deactivate instead of deleting.
 
-Row Level Security is **enabled on every table with no policies**. Only the backend, using the service key, reads or writes data. Never write policies that open tables to the public key.
+Row Level Security stays **enabled on every table with no policies**. Only the backend reads and writes application tables through PostgreSQL. Supabase Auth remains enabled for Google sign-in and access token verification.
 
 ## 8. Security rules (non-negotiable)
 
@@ -96,7 +96,7 @@ Row Level Security is **enabled on every table with no policies**. Only the back
 3. **Video access is decided in exactly one function**, called from everywhere. It allows playback only if: the user is not blocked, the lecture is `ready` and not hidden, and the user has an enrollment with status `paid` for that lecture's course. Do not copy this check elsewhere.
 4. Never trust the client for prices, amounts, or statuses. Always read them from the database.
 5. Only the **verified Razorpay webhook** can mark a payment captured or an enrollment paid. The frontend success page only polls the backend for status.
-6. The Supabase **service key**, the CloudFront private key, Razorpay key secret and webhook secret live only in backend environment variables. They never appear in code, logs, the frontend, commits, or prompts.
+6. The PostgreSQL connection string, the CloudFront private key, Razorpay key secret and webhook secret live only in backend environment variables. They never appear in code, logs, the frontend, commits, or prompts.
 7. Never return a permanent video URL. Only short-lived signed URLs.
 8. Admin-only data (teacher email and phone, payment details, refund queue) must never be returned by student-facing endpoints.
 9. Retries and double-clicks must never cause double effects (double charge, double enrollment, double refund).
@@ -141,7 +141,10 @@ Row Level Security is **enabled on every table with no policies**. Only the back
 
 ## 10. Conventions
 
-- Commit each small, coherent change separately with a descriptive message.
+- Group related changes into small, manageable logical commits. Avoid committing every minor change individually, but don't let commits become too large or mix unrelated changes. Use clear, descriptive commit messages.
+
+
+
 
 - Database columns are snake_case. TypeScript uses camelCase. Convert in the data access layer.
 - Validate all input at the route boundary. Reject unknown fields where it matters.
