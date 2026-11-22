@@ -189,7 +189,7 @@ Status: project initialization (step 0) complete. Schema design agreed and the i
 ## 13. Open decisions
 
 - Final hosting providers.
-- Initial UI and UX will be simple and prioritize working features. We can revise the design later.
+- Keep the UI simple and polished. Use clear visual hierarchy, consistent spacing, and responsive layouts while prioritizing working features.
 - Whether demo lecture videos use signed URLs or a public CloudFront path.
 - Whether partial refunds are ever needed.
 - Whether to add email and password login later.

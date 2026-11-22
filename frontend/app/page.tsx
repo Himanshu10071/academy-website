@@ -112,30 +112,55 @@ export default function HomePage() {
   }
 
   const currentAccount = account?.token === token ? account : undefined;
+  const profile = currentAccount?.profile;
+  const initials = profile?.name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("");
 
   return (
-    <main className={styles.panel}>
-      <h1>Academy Website</h1>
-      {currentAccount?.profile && (
-        <p>Signed in as {currentAccount.profile.name} ({currentAccount.profile.email}).</p>
-      )}
-      {token && !currentAccount && <p role="status">Checking your account…</p>}
-      {(error || currentAccount?.error) && <p role="alert">{error || currentAccount?.error}</p>}
-      {token ? (
-        <div className={styles.actions}>
-          {currentAccount?.error && (
-            <button type="button" disabled={busy} onClick={() => {
-              setAccount(undefined);
-              setRetry((value) => value + 1);
-            }}>Retry</button>
+    <main className={styles.screen}>
+      <section className={styles.panel} aria-labelledby="account-heading">
+        <header className={styles.banner}>
+          <span className={styles.mark} aria-hidden="true">A</span>
+          <span>Academy Website</span>
+        </header>
+        <div className={styles.content}>
+          <h1 id="account-heading">{token ? "Your academy account" : "Sign in to the academy"}</h1>
+          {!token && <p className={styles.description}>Use your Google account to access your recorded courses.</p>}
+          {profile && (
+            <div className={styles.profile}>
+              <span className={styles.avatar} aria-hidden="true">{initials?.toLocaleUpperCase()}</span>
+              <dl className={styles.details}>
+                <div>
+                  <dt>Name</dt>
+                  <dd>{profile.name}</dd>
+                </div>
+                <div>
+                  <dt>Email</dt>
+                  <dd>{profile.email}</dd>
+                </div>
+              </dl>
+            </div>
           )}
-          <button type="button" disabled={busy} onClick={signOut}>Sign out</button>
+          {token && !currentAccount && <p className={styles.description} role="status">Checking your account…</p>}
+          {(error || currentAccount?.error) && <p className={styles.alert} role="alert">{error || currentAccount?.error}</p>}
+          {token ? (
+            <div className={styles.actions}>
+              {currentAccount?.error && (
+                <button className={styles.primary} type="button" disabled={busy} onClick={() => {
+                  setAccount(undefined);
+                  setRetry((value) => value + 1);
+                }}>Retry</button>
+              )}
+              <button className={styles.secondary} type="button" disabled={busy} onClick={signOut}>
+                {busy ? "Signing out…" : "Sign out"}
+              </button>
+            </div>
+          ) : (
+            <button className={styles.google} type="button" disabled={!client || token === undefined || busy} onClick={signIn}>
+              {busy ? "Opening Google…" : "Continue with Google"}
+            </button>
+          )}
         </div>
-      ) : (
-        <button type="button" disabled={!client || token === undefined || busy} onClick={signIn}>
-          {busy ? "Opening Google…" : "Continue with Google"}
-        </button>
-      )}
+      </section>
     </main>
   );
 }
