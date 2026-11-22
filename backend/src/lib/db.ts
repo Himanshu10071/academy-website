@@ -12,7 +12,7 @@ export const database = new pg.Pool({
 });
 
 database.on("error", () => {
-  logger.error({ module: "database", action: "idle_connection_failed" });
+  logger.error("An idle database connection failed.");
 });
 
 export async function checkDatabase() {

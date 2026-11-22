@@ -14,14 +14,11 @@ export const app = express();
 app.disable("x-powered-by");
 app.use(requestId);
 app.use((request, response, next) => {
-  response.on("finish", () => logger.info({
-    requestId: response.locals.requestId,
-    userId: response.locals.userId,
-    module: "http",
-    action: "request_completed",
-    method: request.method,
-    status: response.statusCode,
-  }));
+  response.on("finish", () => {
+    if (request.method !== "OPTIONS" && response.statusCode < 400) {
+      logger.info(`${request.method} ${response.statusCode}`);
+    }
+  });
   next();
 });
 const frontendOrigin = new URL(env.FRONTEND_URL).origin;

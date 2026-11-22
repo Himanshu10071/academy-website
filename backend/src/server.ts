@@ -4,9 +4,9 @@ import { logger } from "./lib/logger.ts";
 
 app.listen(env.PORT, (error) => {
   if (error) {
-    logger.error({ module: "server", action: "startup_failed", port: env.PORT });
+    logger.error(`Could not start the API on port ${env.PORT}.`);
     process.exitCode = 1;
     return;
   }
-  logger.info({ module: "server", action: "listening", port: env.PORT });
+  logger.info(`API listening on port ${env.PORT}.`);
 });

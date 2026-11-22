@@ -13,7 +13,6 @@ export const authenticate: RequestHandler = async (request, response, next) => {
   if (user.app_metadata.provider !== "google") {
     throw new AppError(403, ERROR_CODE.FORBIDDEN, "Use Google to sign in.");
   }
-  response.locals.userId = user.id;
   response.locals.profile = await getActiveProfile(user.id);
   next();
 };

@@ -86,7 +86,7 @@ backend/
     │   ├── s3.ts              presigned upload links, object existence check
     │   ├── cloudfront.ts      signed URL creation
     │   ├── razorpay.ts        order creation, refund call, signature verification
-    │   ├── logger.ts          structured logger (Pino)
+    │   ├── logger.ts          plain-text terminal logger
     │   └── errors.ts          AppError class and helpers
     │
     ├── middleware/
@@ -314,7 +314,8 @@ Services throw an `AppError` with one of these codes. Only `error-handler.ts` tu
 
 ### 8.2 Logging
 
-- Structured (JSON) logs with: level, timestamp, `requestId`, `userId` (when known), module, and action.
+- Successful requests log one plain-text line with the HTTP method and status. Skip successful CORS preflights.
+- Failed requests also log the error code and request ID so the response can be traced.
 - Log the key business events: login rejected, playback granted or denied, order created, webhook received, webhook rejected, payment captured, refund requested, approved, processed, or failed.
 - **Never log:** tokens, secrets, signed URLs, or full webhook payloads. The raw payload lives only in `payment_events`.
 - No `console.log`. Use the logger.
