@@ -17,12 +17,15 @@ A website for a coaching academy that sells **recorded video courses**. Students
 |---|---|
 | Frontend | Next.js + TypeScript |
 | Backend | Node.js + Express + TypeScript, a persistent server (not serverless) |
-| Database | PostgreSQL on Supabase via the Node.js `pg` driver. Use the session pooler on IPv4 networks. Disable the Supabase Data API. |
+| Database | PostgreSQL on Supabase, **accessed directly by the backend over a Postgres connection. The Supabase Data API is disabled.** |
+| Database driver | `pg` (node-postgres) with plain parameterized SQL (default) |
 | Authentication | Supabase Auth, **Google provider only** |
 | Video storage | AWS S3, private bucket |
 | Video delivery | AWS CloudFront with Origin Access Control and signed URLs |
 | Payments | Razorpay (INR) |
 | Input validation | Zod (default choice, confirm before first use) |
+
+Supabase project settings (decided): **Data API disabled**, automatic API grants for new tables **off**, automatic Row Level Security on new tables **on**. Supabase is used for two things only: the Postgres database (reached directly) and Google sign-in (Supabase Auth).
 
 Hosting is not final. Proposed: frontend on Vercel, backend on Railway or Render, AWS only for S3 and CloudFront.
 
@@ -46,6 +49,7 @@ Why the backend is separate from Next.js: the payment webhook needs an always-av
 3. Keep it a simple modular monolith. Do not add queues, microservices, or extra infrastructure unless asked.
 4. Status values (`pending`, `paid`, `captured`, and so on) are defined once in `shared/` and imported everywhere. Never retype them as strings.
 5. Do not add features, libraries, or abstractions beyond what the current task asks for.
+6. Any change that touches more than one row or table (webhook capture, refund processing, lecture reordering) runs inside **one database transaction**, using the shared transaction helper in `backend/src/lib/db.ts`.
 
 ## 5. Roles and users
 
@@ -87,7 +91,7 @@ Key constraints the database enforces:
 - Money is an integer in paise. Durations are integers in seconds. Ids are uuids. Timestamps are timestamptz in UTC.
 - Foreign keys to financial or historical rows restrict deletion. Hide or deactivate instead of deleting.
 
-Row Level Security stays **enabled on every table with no policies**. Only the backend reads and writes application tables through PostgreSQL. Supabase Auth remains enabled for Google sign-in and access token verification.
+Row Level Security is **enabled on every table with no policies**, and the Supabase Data API is **disabled**, so the tables cannot be reached over HTTP at all. Only the backend, connecting directly to Postgres, reads or writes data. Never enable the Data API and never write policies that open tables to the public key.
 
 ## 8. Security rules (non-negotiable)
 
@@ -96,17 +100,18 @@ Row Level Security stays **enabled on every table with no policies**. Only the b
 3. **Video access is decided in exactly one function**, called from everywhere. It allows playback only if: the user is not blocked, the lecture is `ready` and not hidden, and the user has an enrollment with status `paid` for that lecture's course. Do not copy this check elsewhere.
 4. Never trust the client for prices, amounts, or statuses. Always read them from the database.
 5. Only the **verified Razorpay webhook** can mark a payment captured or an enrollment paid. The frontend success page only polls the backend for status.
-6. The PostgreSQL connection string, the CloudFront private key, Razorpay key secret and webhook secret live only in backend environment variables. They never appear in code, logs, the frontend, commits, or prompts.
+6. The **database connection string** (`DATABASE_URL`), AWS keys, the CloudFront private key, the Razorpay key secret and the webhook secret live only in backend environment variables. They never appear in code, logs, the frontend, commits, or prompts. The Supabase service key is not used anywhere in this project.
 7. Never return a permanent video URL. Only short-lived signed URLs.
 8. Admin-only data (teacher email and phone, payment details, refund queue) must never be returned by student-facing endpoints.
 9. Retries and double-clicks must never cause double effects (double charge, double enrollment, double refund).
 10. Never log tokens, secrets, or full webhook bodies in application logs. The raw payload belongs only in `payment_events`.
+11. **All SQL is parameterized.** Never build a query by joining strings that contain user input.
 
 ## 9. Flows
 
 ### 9.1 Login and profile creation
 1. The frontend uses the Supabase browser library **only** for Google sign-in.
-2. After login, the frontend sends the session access token to the backend as a bearer token. The backend verifies it with Supabase, loads the profile, and checks `is_blocked`.
+2. After login, the frontend sends the session access token to the backend as a bearer token. The backend verifies it by asking Supabase Auth (it needs only the public Supabase URL and anon key), then loads the profile from the database and checks `is_blocked`.
 3. When Supabase creates a new auth user, a database trigger creates the `profiles` row: name and email from Google, role `student`, phone empty.
 4. If phone is empty, the app asks for it, and the backend refuses to create a payment order until it is saved. Students can edit name and phone later. Email is not editable in the MVP.
 
@@ -188,3 +193,4 @@ Status: project initialization (step 0) complete. Schema design agreed and the i
 - Whether demo lecture videos use signed URLs or a public CloudFront path.
 - Whether partial refunds are ever needed.
 - Whether to add email and password login later.
+- Whether the backend should use a dedicated least-privilege database role instead of the default `postgres` role.

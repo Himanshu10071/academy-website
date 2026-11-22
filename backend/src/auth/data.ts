@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
 import { config } from "../config.ts";
-import { database } from "../database.ts";
+import { database } from "../lib/db.ts";
 
 const supabase = createClient(config.supabaseUrl, config.supabasePublishableKey, {
   auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
