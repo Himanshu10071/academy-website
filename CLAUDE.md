@@ -23,7 +23,7 @@ A website for a coaching academy that sells **recorded video courses**. Students
 | Video storage | AWS S3, private bucket |
 | Video delivery | AWS CloudFront with Origin Access Control and signed URLs |
 | Payments | Razorpay (INR) |
-| Input validation | Zod (default choice, confirm before first use) |
+| Input validation | Zod |
 
 Supabase project settings (decided): **Data API disabled**, automatic API grants for new tables **off**, automatic Row Level Security on new tables **on**. Supabase is used for two things only: the Postgres database (reached directly) and Google sign-in (Supabase Auth).
 
@@ -113,7 +113,7 @@ Row Level Security is **enabled on every table with no policies**, and the Supab
 1. The frontend uses the Supabase browser library **only** for Google sign-in.
 2. After login, the frontend sends the session access token to the backend as a bearer token. The backend verifies it by asking Supabase Auth (it needs only the public Supabase URL and anon key), then loads the profile from the database and checks `is_blocked`.
 3. When Supabase creates a new auth user, a database trigger creates the `profiles` row: name and email from Google, role `student`, phone empty.
-4. If phone is empty, the app asks for it, and the backend refuses to create a payment order until it is saved. Students can edit name and phone later. Email is not editable in the MVP.
+4. If phone is empty, the app shows a profile completion prompt. Students can add a phone number and edit their name through their profile. The phone is required before checkout. Email is read-only.
 
 ### 9.2 Video playback
 1. Student requests playback for a lecture. The endpoint is authenticated.
@@ -173,7 +173,7 @@ Write tests for the dangerous paths. A task touching these is not done without t
 
 ## 12. Build order and status
 
-Status: project initialization (step 0) complete. Schema design agreed and the initial migration is next.
+Status: initial schema, backend authentication and profile endpoints, and Google sign-in with profile completion are implemented. The Prince Academy homepage has empty states for courses and demos.
 
 0. Repo setup, this brief, folder layout, environment handling.
 1. Database migrations, RLS on, triggers (updated_at, lecture_count, profile creation).

@@ -8,17 +8,17 @@ Use Node.js 22.13 or later and npm. Install dependencies from the repository roo
 
 Run these commands in separate terminals from the repository root.
 
-- `npm run dev:frontend` serves the Google sign-in page at `http://localhost:3000`.
-- `npm run dev:backend` starts the Express server. Check it at `http://localhost:4000/health`.
+- `npm run dev:frontend` serves the Prince Academy homepage at `http://localhost:3000`.
+- `npm run dev:backend` starts the Express server. Check it at `http://localhost:4000/api/v1/health`.
 
 ## Connect Supabase for Google sign-in
 
 1. Apply [the initial migration](supabase/migrations/initial_schema.sql) to your Supabase project before signing in.
 2. Enable Google as the only sign-in provider in Supabase Auth. Use the Supabase callback URL shown in the Google provider settings as the authorized redirect URI in Google Cloud. Set the Supabase Site URL to `http://localhost:3000` and allow `http://localhost:3000/` as a redirect URL for local development.
 3. Open the project's **Integrations → Data API** settings and disable the Data API. Supabase Auth handles Google sign-in separately. [Supabase data security guide](https://supabase.com/docs/guides/database/secure-data)
-4. Fill in the project URL, publishable key, and `DATABASE_URL` in `backend/.env`. Copy `backend/.env.example` if the local file is missing. Use the **Session pooler** URL from Supabase's **Connect** dialog if the backend runs on an IPv4-only network. A direct URL works when the backend can reach its database host. Replace the password placeholder with your URL-encoded database password. [Supabase connection guide](https://supabase.com/docs/guides/database/connecting-to-postgres)
-5. Fill in the same project URL and publishable key in `frontend/.env.local`. Copy `frontend/.env.example` if the local file is missing. Set `BACKEND_URL` if Express runs at an address other than `http://localhost:4000`.
-6. Start both apps and open `http://localhost:3000`. Express verifies the access token with Supabase Auth and reads the account profile through PostgreSQL. Keep `DATABASE_URL` in the backend environment.
+4. Copy `backend/.env.example` to `backend/.env` if needed. Set `SUPABASE_URL`, `SUPABASE_ANON_KEY` (anon or publishable key), and `DATABASE_URL`. Set `FRONTEND_URL` to your frontend origin and fill in the remaining backend settings from the template. Use the **Session pooler** URL from Supabase's **Connect** dialog on IPv4-only networks. Replace the password placeholder with your URL-encoded database password. [Supabase connection guide](https://supabase.com/docs/guides/database/connecting-to-postgres)
+5. Copy `frontend/.env.example` to `frontend/.env.local` if needed. Fill in `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `NEXT_PUBLIC_API_URL`, which points to the Express server.
+6. Start both apps and open `http://localhost:3000`. Express verifies the token with Supabase Auth and loads the profile through PostgreSQL. After signing in, add a phone number or edit your profile from the header. Keep `DATABASE_URL` in the backend environment.
 
 Run `npm run typecheck` to check the TypeScript workspaces and `npm run build` to compile the frontend and backend.
 

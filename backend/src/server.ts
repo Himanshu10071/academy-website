@@ -1,30 +1,12 @@
-import express from "express";
+import { app } from "./app.ts";
+import { env } from "./config/env.ts";
+import { logger } from "./lib/logger.ts";
 
-import { config } from "./config.ts";
-import { authRoutes } from "./auth/routes.ts";
-
-const app = express();
-
-app.disable("x-powered-by");
-
-app.get("/health", (_request, response) => {
-  response.json({ status: "ok" });
-});
-
-app.use("/auth", authRoutes);
-
-app.use((_request, response) => {
-  response.status(404).json({
-    error: { code: "NOT_FOUND", message: "Route not found." },
-  });
-});
-
-app.listen(config.port, (error) => {
+app.listen(env.PORT, (error) => {
   if (error) {
-    console.error("Could not start the backend.", error.message);
+    logger.error({ module: "server", action: "startup_failed", port: env.PORT });
     process.exitCode = 1;
     return;
   }
-
-  console.log(`Backend listening on port ${config.port}.`);
+  logger.info({ module: "server", action: "listening", port: env.PORT });
 });

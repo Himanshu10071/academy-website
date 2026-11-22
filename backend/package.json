@@ -5,20 +5,29 @@
   "type": "module",
   "scripts": {
     "dev": "node --env-file-if-exists=.env --watch src/server.ts",
-    "build": "tsc",
+    "build": "tsc --project tsconfig.build.json",
     "start": "node --env-file-if-exists=.env dist/server.js",
     "typecheck": "tsc --noEmit",
-    "test": "node --test"
+    "pretest": "npm run build --workspace=@academy/shared",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@academy/shared": "^0.1.0",
     "@supabase/supabase-js": "^2.119.2",
+    "cors": "^2.8.6",
     "express": "^5.1.0",
-    "pg": "^8.23.1"
+    "pg": "^8.23.1",
+    "pino": "^10.4.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",
     "@types/pg": "^8.23.1",
-    "typescript": "^5.9.0"
+    "@types/supertest": "^7.2.1",
+    "supertest": "^7.3.2",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.7"
   }
 }

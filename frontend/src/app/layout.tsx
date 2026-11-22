@@ -4,8 +4,8 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Academy Website",
-  description: "Recorded courses from the coaching academy.",
+  title: "Prince Academy",
+  description: "Recorded video courses from expert teachers at Prince Academy.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

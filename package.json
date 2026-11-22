@@ -7,9 +7,10 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "dev:frontend": "npm run dev --workspace=@academy/frontend",
-    "dev:backend": "npm run dev --workspace=@academy/backend",
-    "build": "npm run build --workspaces --if-present",
+    "dev:frontend": "npm run build:shared && npm run dev --workspace=@academy/frontend",
+    "dev:backend": "npm run build:shared && npm run dev --workspace=@academy/backend",
+    "build:shared": "npm run build --workspace=@academy/shared",
+    "build": "npm run build:shared && npm run build --workspace=@academy/frontend --workspace=@academy/backend",
     "typecheck": "npm run typecheck --workspaces"
   }
 }

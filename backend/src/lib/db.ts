@@ -1,17 +1,23 @@
 import pg, { type PoolClient } from "pg";
 
-import { config } from "../config.ts";
+import { env } from "../config/env.ts";
+import { logger } from "./logger.ts";
 
 export const database = new pg.Pool({
-  connectionString: config.databaseUrl,
-  ssl: true,
-  max: 5,
+  connectionString: env.DATABASE_URL,
+  ssl: { rejectUnauthorized: true },
+  max: env.DATABASE_POOL_MAX,
   connectionTimeoutMillis: 5_000,
+  query_timeout: 5_000,
 });
 
 database.on("error", () => {
-  console.error("An idle PostgreSQL connection failed.");
+  logger.error({ module: "database", action: "idle_connection_failed" });
 });
+
+export async function checkDatabase() {
+  await database.query("SELECT 1");
+}
 
 export async function withTransaction<T>(work: (client: PoolClient) => Promise<T>): Promise<T> {
   const client = await database.connect();
