@@ -21,3 +21,7 @@ Run these commands in separate terminals from the repository root.
 6. Start both apps and open `http://localhost:3000`. Express verifies the access token with Supabase Auth and reads the account profile through PostgreSQL. Keep `DATABASE_URL` in the backend environment.
 
 Run `npm run typecheck` to check the TypeScript workspaces and `npm run build` to compile the frontend and backend.
+
+Run `npm test --workspace=backend` for authentication and transaction tests.
+
+If PostgreSQL reports `SELF_SIGNED_CERT_IN_CHAIN`, download the Supabase root certificate from **Database Settings → SSL Configuration**. In `DATABASE_URL`, set `sslmode=verify-full` and `sslrootcert` to the URL-encoded certificate path. Resolve relative paths from the backend working directory. [Supabase SSL guide](https://supabase.com/docs/guides/platform/ssl-enforcement)
