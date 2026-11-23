@@ -30,6 +30,8 @@ Set `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `S3_BUCKET` 
 
 In the bucket's CORS settings, allow `PUT` from the app's frontend origin (for example, `http://localhost:3000`) with the `Content-Type` and `If-None-Match` headers. Sign in with an admin account and open **Manage catalog** to upload videos.
 
+Playback uses short-lived S3 GET URLs until CloudFront is configured. The backend AWS identity needs `s3:GetObject` for the lecture and demo objects. Set `SIGNED_URL_TTL_SECONDS` in the backend if you need a shorter expiry for testing. The default is 900 seconds. Keep the bucket private.
+
 For catalog integration tests, point `DATABASE_URL_TEST` to a separate PostgreSQL database with `test` as a segment in its name and the initial schema applied. The tests use dedicated fixtures and mock Supabase Auth and S3. Never set this to the application database.
 
 If PostgreSQL reports `SELF_SIGNED_CERT_IN_CHAIN`, download the Supabase root certificate from **Database Settings → SSL Configuration**. In `DATABASE_URL`, set `sslmode=verify-full` and `sslrootcert` to the URL-encoded certificate path. Resolve relative paths from the backend working directory. [Supabase SSL guide](https://supabase.com/docs/guides/platform/ssl-enforcement)

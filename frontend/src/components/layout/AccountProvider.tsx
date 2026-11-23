@@ -12,6 +12,7 @@ import { ProfileForm } from "./ProfileForm";
 type Account = {
   profile?: Profile;
   token?: string;
+  userId?: string;
   accountError: string;
   signedIn: boolean;
   ready: boolean;
@@ -135,7 +136,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AccountContext.Provider value={{ profile, token, accountError: error, signedIn: Boolean(session), ready: session !== undefined, busy, signIn, logout, edit }}>
+    <AccountContext.Provider value={{ profile, token, userId: session?.user.id, accountError: error, signedIn: Boolean(session), ready: session !== undefined, busy, signIn, logout, edit }}>
       {children}
       {error && <p className="account-notice" role="alert">{error}</p>}
       {session && !profile && !error && <p className="account-notice" role="status">Checking your account…</p>}

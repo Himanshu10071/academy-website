@@ -21,7 +21,7 @@ A website for a coaching academy that sells **recorded video courses**. Students
 | Database driver | `pg` (node-postgres) with plain parameterized SQL (default) |
 | Authentication | Supabase Auth, **Google provider only** |
 | Video storage | AWS S3, private bucket |
-| Video delivery | AWS CloudFront with Origin Access Control and signed URLs |
+| Video delivery | Temporary S3 presigned GET URLs through a swappable signer. AWS CloudFront with Origin Access Control and signed URLs is planned for launch. |
 | Payments | Razorpay (INR) |
 | Input validation | Zod |
 
@@ -118,9 +118,9 @@ Row Level Security is **enabled on every table with no policies**, and the Supab
 ### 9.2 Video playback
 1. Student requests playback for a lecture. The endpoint is authenticated.
 2. The access function (section 8, rule 3) runs.
-3. If allowed, the backend creates a **CloudFront signed URL** for the lecture's `video_key`, valid **10 to 15 minutes**, signed with the private key.
+3. If allowed, the backend calls `lib/video-signer.ts` for a signed playback URL. It uses S3 presigned GET URLs with a 15-minute default until CloudFront is ready.
 4. The player uses that URL. When it expires, the frontend asks the backend for a new one, which re-runs the access check.
-5. The S3 bucket is private. Only CloudFront can read it, through Origin Access Control. Direct S3 URLs must fail.
+5. The S3 bucket is private. Unsigned S3 reads are denied. At launch, CloudFront with Origin Access Control will serve videos using CloudFront signed URLs.
 6. MVP uses a single compressed MP4 per lecture served with range requests. Adaptive streaming (HLS) is a possible future upgrade.
 
 ### 9.3 Purchase
@@ -173,14 +173,14 @@ Write tests for the dangerous paths. A task touching these is not done without t
 
 ## 12. Build order and status
 
-Status: initial schema, authentication and profile completion, admin catalog and S3 uploads, and public catalog pages are implemented.
+Status: initial schema, authentication and profile completion, admin catalog and S3 uploads, public catalog pages, and playback with paid enrollment checks and a temporary S3 signer are implemented.
 
 0. Repo setup, this brief, folder layout, environment handling.
 1. Database migrations, RLS on, triggers (updated_at, lecture_count, profile creation).
 2. Backend skeleton: token verification, role and blocked checks.
 3. Google login on the frontend, plus the add-phone step.
 4. Admin: teachers, courses, lecture upload to S3.
-5. CloudFront setup and the playback endpoint with the access function.
+5. Playback endpoint with the access function and temporary S3 signer. Replace the signer with CloudFront before launch.
 6. Razorpay order creation and the webhook.
 7. Refunds.
 8. Student and admin screens.

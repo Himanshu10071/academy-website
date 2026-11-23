@@ -184,6 +184,21 @@ a.catalog-card:hover { border-color: #7786b0; }
   background: var(--surface);
 }
 .curriculum li span:last-child { flex: none; color: var(--muted); }
+.curriculum a { color: var(--accent); text-decoration: underline; text-underline-offset: .2em; }
+.curriculum [aria-current] { border-inline-start: 2px solid var(--accent); }
+.curriculum .curriculum-lock { margin-inline-end: .45rem; font-size: .8em; }
+.watch-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+.watch-page h1 { margin: .5rem 0 1rem; }
+.watch-curriculum .curriculum { margin-top: .75rem; }
+.playback-video { display: block; width: 100%; max-height: 72vh; aspect-ratio: 16 / 9; border-radius: .75rem; background: #080a12; }
+.demo-dialog { width: min(calc(100% - 2rem), 55rem); }
+.demo-dialog .admin-heading { margin-bottom: .8rem; }
+.demo-dialog h2 { margin: 0; }
+.catalog-card-body .button { justify-self: start; }
+
+@media (max-width: 48rem) {
+  .watch-layout { grid-template-columns: minmax(0, 1fr); }
+}
 
 .admin-main { padding-block: 1.6rem 4rem; }
 .admin-nav { margin-bottom: 1.6rem; }

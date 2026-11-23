@@ -3,9 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { CatalogImage } from "../../../../components/course/CatalogCards";
+import { CourseCurriculum } from "../../../../components/course/Curriculum";
 import { getCourse } from "../../../../lib/api/catalog";
 import { ApiError } from "../../../../lib/api/client";
-import { formatDuration, formatPrice } from "../../../../lib/catalog-format";
+import { formatPrice } from "../../../../lib/catalog-format";
 
 export default async function CoursePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -39,13 +40,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
       </section>
       <section aria-labelledby="curriculum-heading">
         <h2 id="curriculum-heading">Curriculum</h2>
-        {course.lectures.length ? <ol className="curriculum">
-          {course.lectures.map((lecture) => (
-            <li key={lecture.lectureNumber} value={lecture.lectureNumber}>
-              <span>{lecture.lectureNumber}. {lecture.name}</span><span>{formatDuration(lecture.duration)}</span>
-            </li>
-          ))}
-        </ol> : <p className="empty-state">No lectures are listed yet.</p>}
+        <CourseCurriculum courseId={course.id} lectures={course.lectures} />
       </section>
     </main>
   );

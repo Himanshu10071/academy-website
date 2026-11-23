@@ -2,6 +2,7 @@ import type { PublicCourse, PublicDemo } from "@academy/shared";
 import Link from "next/link";
 
 import { formatDuration, formatPrice } from "../../lib/catalog-format";
+import { PlayDemo } from "../player/PlayDemo";
 
 export function CatalogImage({ url }: { url: string | null }) {
   if (!url) return <div className="catalog-image catalog-image-placeholder" aria-hidden="true" />;
@@ -31,6 +32,7 @@ export function DemoCard({ demo }: { demo: PublicDemo }) {
         <h3>{demo.name}</h3>
         {demo.description && <p>{demo.description}</p>}
         <div className="catalog-card-meta">{formatDuration(demo.duration)}</div>
+        <PlayDemo id={demo.id} name={demo.name} />
       </div>
     </article>
   );

@@ -28,6 +28,7 @@ export function AcademyHeader() {
           <div className="account-actions">
             {profile && <>
               <span className="account-name">{profile.name}</span>
+              <Link className="button button-quiet" href="/my-courses">My Courses</Link>
               {profile.role === ROLE.ADMIN && <Link className="button button-quiet" href="/admin">Manage catalog</Link>}
               <button className="button button-quiet" type="button" onClick={() => edit(profile.phone?.trim() ? "edit" : "phone")}>
                 {profile.phone?.trim() ? "Edit profile" : "Add phone number"}
