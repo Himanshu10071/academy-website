@@ -323,7 +323,7 @@ Services throw an `AppError` with one of these codes. Only `error-handler.ts` tu
 
 ### 8.2 Logging
 
-- Successful requests log one plain-text line with the HTTP method and status. Skip successful CORS preflights.
+- Requests log one plain-text line with the HTTP method, path without query parameters, status, and total elapsed time. Skip successful CORS preflights.
 - Failed requests also log the error code and request ID so the response can be traced.
 - Log the key business events: login rejected, playback granted or denied, order created, webhook received, webhook rejected, payment captured, refund requested, approved, processed, or failed.
 - **Never log:** tokens, secrets, signed URLs, or full webhook payloads. The raw payload lives only in `payment_events`.

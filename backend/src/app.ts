@@ -18,9 +18,18 @@ export const app = express();
 app.disable("x-powered-by");
 app.use(requestId);
 app.use((request, response, next) => {
+  const startedAt = performance.now();
+  const path = request.originalUrl.split(/[?#]/, 1)[0];
   response.on("finish", () => {
-    if (request.method !== "OPTIONS" && response.statusCode < 400) {
-      logger.info(`${request.method} ${response.statusCode}`);
+    if (request.method === "OPTIONS" && response.statusCode < 400) return;
+
+    const duration = Math.round(performance.now() - startedAt);
+    const line = `${request.method} ${path} ${response.statusCode} in ${duration}ms`;
+    if (response.statusCode >= 400) {
+      const code = response.locals.errorCode ? ` ${response.locals.errorCode}` : "";
+      logger.error(`${line}${code} (request ${response.locals.requestId})`);
+    } else {
+      logger.info(line);
     }
   });
   next();
