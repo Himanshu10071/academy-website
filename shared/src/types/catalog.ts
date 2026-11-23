@@ -23,9 +23,9 @@ export type UpdateCourse = Partial<CourseInput & { slug: string }>;
 export type AdminCourse = CourseSummary & { teacherId: string; isPublished: boolean };
 export type PublicCourse = CourseSummary & { teacher: PublicTeacher };
 
-export type PublicLecture = { lectureNumber: number; name: string; duration: number | null };
+export type PublicLecture = { id: string; lectureNumber: number; name: string; duration: number | null };
 type VideoStatus = (typeof VIDEO_STATUS)[keyof typeof VIDEO_STATUS];
-export type AdminLecture = PublicLecture & { id: string; videoStatus: VideoStatus; isHidden: boolean };
+export type AdminLecture = PublicLecture & { videoStatus: VideoStatus; isHidden: boolean };
 export type UpdateLecture = Partial<Pick<AdminLecture, "name" | "isHidden">>;
 export type CourseDetail = PublicCourse & { lectures: PublicLecture[] };
 

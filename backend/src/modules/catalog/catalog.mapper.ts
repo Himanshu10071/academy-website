@@ -27,12 +27,12 @@ export function mapPublicCourse(row: PublicCourseRow): PublicCourse {
   };
 }
 
-export function mapPublicLecture(row: Pick<LectureRow, "lecture_name" | "lecture_number" | "duration">): PublicLecture {
-  return { name: row.lecture_name, lectureNumber: row.lecture_number, duration: row.duration };
+export function mapPublicLecture(row: Pick<LectureRow, "id" | "lecture_name" | "lecture_number" | "duration">): PublicLecture {
+  return { id: row.id, name: row.lecture_name, lectureNumber: row.lecture_number, duration: row.duration };
 }
 
 export function mapAdminLecture(row: LectureRow): AdminLecture {
-  return { ...mapPublicLecture(row), id: row.id, videoStatus: row.video_status, isHidden: row.is_hidden };
+  return { ...mapPublicLecture(row), videoStatus: row.video_status, isHidden: row.is_hidden };
 }
 
 export function mapPublicDemo(row: Pick<DemoRow, "id" | "name" | "description" | "thumbnail_url" | "duration">): PublicDemo {

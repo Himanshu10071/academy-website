@@ -188,13 +188,13 @@ export async function listPublicCourses() {
   return rows;
 }
 
-type PublicLectureRow = Pick<LectureRow, "lecture_name" | "lecture_number" | "duration">;
+type PublicLectureRow = Pick<LectureRow, "id" | "lecture_name" | "lecture_number" | "duration">;
 
 export async function findPublicCourse(slug: string) {
   const { rows } = await database.query<PublicCourseRow & { lectures: PublicLectureRow[] }>(
     `SELECT c.id, c.name, c.slug, c.description, c.thumbnail_url, c.price, c.lecture_count,
             t.name AS teacher_name, t.bio AS teacher_bio, t.photo_url AS teacher_photo_url,
-            ARRAY(SELECT json_build_object('lecture_name', l.lecture_name,
+            ARRAY(SELECT json_build_object('id', l.id, 'lecture_name', l.lecture_name,
               'lecture_number', l.lecture_number, 'duration', l.duration)
               FROM public.lectures l WHERE l.course_id = c.id AND l.video_status = $2 AND NOT l.is_hidden
               ORDER BY l.lecture_number) AS lectures

@@ -138,7 +138,7 @@ describe.skipIf(!testDatabaseUrl)("catalog API with PostgreSQL", () => {
     expect(list.body.some(({ id }: { id: string }) => id === draft.id)).toBe(false);
     expect((await request(app).get(`${prefix}/courses/${draft.slug}`)).status).toBe(404);
     expect(detail.body.teacher).toEqual({ name: "Sample teacher", bio: "Teacher biography", photoUrl: null });
-    expect(detail.body.lectures).toEqual([{ lectureNumber: 1, name: "Public lecture", duration: 90 }]);
+    expect(detail.body.lectures).toEqual([{ id: ready.id, lectureNumber: 1, name: "Public lecture", duration: 90 }]);
     expect(demos.body).toContainEqual({
       id: demo.body.id, name: "Sample demo", description: null, thumbnailUrl: null, duration: 45,
     });

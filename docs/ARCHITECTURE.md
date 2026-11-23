@@ -18,11 +18,12 @@ Browser (Next.js app)
 Backend (Node + Express + TypeScript)  <-- the ONLY thing that touches data
    |--> Supabase Postgres   (direct Postgres connection; Data API disabled; RLS on, no policies)
    |--> Supabase Auth       (token verification only)
-   |--> S3                  (private bucket: upload links, existence checks)
-   |--> CloudFront          (signed playback URLs)
+   |--> S3                  (private bucket: upload links, existence checks, temporary signed playback)
+   |--> CloudFront          (planned signed playback)
    |--> Razorpay            (create orders, refunds; receives webhooks)
 
-Browser --> CloudFront (signed URL) --> S3 (private, only CloudFront can read)
+Browser --> S3 (private, temporary presigned GET URL)
+At launch: Browser --> CloudFront (signed URL) --> S3 (private with Origin Access Control)
 Razorpay --> Backend webhook endpoint (signature verified)
 ```
 
@@ -84,7 +85,7 @@ backend/
     │   ├── db.ts              Postgres connection pool and the transaction helper
     │   ├── supabase-auth.ts   token verification (public URL and anon key only)
     │   ├── s3.ts              presigned upload links, object existence check
-    │   ├── cloudfront.ts      signed URL creation
+    │   ├── video-signer.ts    signed playback URL creation
     │   ├── razorpay.ts        order creation, refund call, signature verification
     │   ├── logger.ts          plain-text terminal logger
     │   └── errors.ts          AppError class and helpers
@@ -159,15 +160,16 @@ All routes are under `/api/v1` except the webhook. Names below are the agreed st
 **Public (no login)**
 - `GET /health`: verifies database connectivity and returns `503` when the database is unavailable.
 - `GET /courses`: published courses with teacher name, bio, and photo.
-- `GET /courses/:slug`: published course and teacher details, plus lecture number, name, and duration for ready, visible lectures.
+- `GET /courses/:slug`: published course and teacher details, plus lecture ID, number, name, and duration for ready, visible lectures.
 - `GET /demos`: published demo metadata ordered by display order.
+- `POST /demos/:id/playback`: signed playback URL for a published demo. Unknown or unpublished demos return `NOT_FOUND`.
 - Public catalog responses exclude video keys and teacher email and phone.
 
 **Student (login required)**
 - `GET /me`: returns `id`, `name`, `email`, `phone`, and `role`.
 - `PATCH /me`: accepts only `name` and `phone`. Returns the updated profile.
-- `GET /me/enrollments`: courses the student owns.
-- `POST /lectures/:id/playback`: runs the access rule, returns a signed URL.
+- `GET /me/enrollments`: course metadata for the caller's paid enrollments only.
+- `POST /lectures/:id/playback`: verifies the Google session, loads profile, lecture, and course enrollment together, and runs the single access rule. Returns the signed URL, expiry, and lecture metadata with cache disabled. The player requests a replacement once for an expired URL and restores its position.
 - `POST /courses/:id/checkout`: requires a phone number on the profile. Reuses a pending enrollment or creates one, creates a payment and a Razorpay order, returns the order id.
 - `GET /courses/:id/enrollment-status`: polled after payment.
 - `POST /refund-requests`, `GET /me/refund-requests`.
@@ -264,7 +266,8 @@ Backend variables:
 - Database: `DATABASE_URL`, `DATABASE_POOL_MAX`
 - Supabase Auth (token verification only): `SUPABASE_URL`, `SUPABASE_ANON_KEY`
 - AWS: `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `S3_BUCKET`
-- CloudFront: `CLOUDFRONT_DOMAIN`, `CLOUDFRONT_KEY_PAIR_ID`, `CLOUDFRONT_PRIVATE_KEY`, `SIGNED_URL_TTL_SECONDS`
+- Playback: `SIGNED_URL_TTL_SECONDS` (900 by default, 900 maximum).
+- CloudFront (planned): `CLOUDFRONT_DOMAIN`, `CLOUDFRONT_KEY_PAIR_ID`, `CLOUDFRONT_PRIVATE_KEY`.
 - Razorpay: `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`
 - Business: `REFUND_WINDOW_DAYS` (3)
 
@@ -338,8 +341,8 @@ Services throw an `AppError` with one of these codes. Only `error-handler.ts` tu
 | Same payment processed twice | the verified-event unique index and the idempotency check in the payments service |
 | Student has access without paying | `playback/access.ts`, then whether any route bypasses it |
 | Video plays then stops after some minutes | signed URL lifetime (`SIGNED_URL_TTL_SECONDS`) and the player's refresh handling |
-| Video link returns 403 | CloudFront key pair id, private key, key group, or the S3 access policy |
-| Direct S3 link works (it should not) | the bucket policy and origin access control |
+| Video link returns 403 | the signed link expiration, S3 access policy, or the CloudFront key group once CloudFront is in place |
+| Unsigned S3 link works | the bucket access policy |
 | Cannot buy a course | `PROFILE_INCOMPLETE`, then the active-enrollment unique rule, then the course's `is_published` |
 | Refund rejected unexpectedly | `payments.refund_eligible_until` against the request time, then any open request |
 | Refund approved but access remains | the transaction that marks the refund `processed`, the payment `refunded`, and the enrollment `revoked` |

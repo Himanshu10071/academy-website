@@ -19,6 +19,7 @@ const schema = z.object({
   AWS_ACCESS_KEY_ID: z.string().trim().min(1),
   AWS_SECRET_ACCESS_KEY: z.string().trim().min(1),
   S3_BUCKET: z.string().trim().min(1),
+  SIGNED_URL_TTL_SECONDS: z.coerce.number().int().min(1).max(900).default(900),
 });
 
 const result = schema.safeParse(process.env);

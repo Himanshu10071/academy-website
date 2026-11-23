@@ -6,7 +6,7 @@ import { env } from "../config/env.ts";
 import { AppError } from "./errors.ts";
 
 const bucket = env.S3_BUCKET;
-const s3 = new S3Client({
+export const s3 = new S3Client({
   region: env.AWS_REGION,
   credentials: { accessKeyId: env.AWS_ACCESS_KEY_ID, secretAccessKey: env.AWS_SECRET_ACCESS_KEY },
   requestChecksumCalculation: "WHEN_REQUIRED",

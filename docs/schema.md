@@ -9,3 +9,7 @@ The profile API exposes `user_name` as `name` and `phone_number` as `phone`. New
 - Courses require a teacher. The API expresses `courses.price` as `pricePaise`. The lecture count trigger counts ready, visible lectures.
 - Lecture uploads append a row to the course. The reorder endpoint uses the deferrable `lectures_course_number_key` constraint to update numbers within one transaction.
 - Demo uploads create unpublished rows with duration in seconds. Public demos are ordered by `display_order`. Video keys are internal to the backend.
+
+## Playback
+
+The lecture access query reads `profiles.is_blocked`, `lectures.video_status`, `lectures.is_hidden`, and the caller's enrollment for that lecture's `course_id`. The owned courses endpoint reads paid enrollments only. A playback response uses the video key to sign a temporary URL and exposes no separate key field.
