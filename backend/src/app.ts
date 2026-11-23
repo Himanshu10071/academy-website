@@ -4,11 +4,15 @@ import express from "express";
 
 import { env } from "./config/env.ts";
 import { checkDatabase } from "./lib/db.ts";
+import { authenticate } from "./middleware/authenticate.ts";
+import { requireAdmin } from "./middleware/require-admin.ts";
 import { AppError } from "./lib/errors.ts";
 import { logger } from "./lib/logger.ts";
 import { errorHandler } from "./middleware/error-handler.ts";
 import { requestId } from "./middleware/request-id.ts";
 import { profileRoutes } from "./modules/profile/profile.routes.ts";
+import { adminCatalogRoutes, publicCatalogRoutes } from "./modules/catalog/catalog.routes.ts";
+import { uploadRoutes } from "./modules/uploads/uploads.routes.ts";
 
 export const app = express();
 app.disable("x-powered-by");
@@ -24,7 +28,7 @@ app.use((request, response, next) => {
 const frontendOrigin = new URL(env.FRONTEND_URL).origin;
 app.use(cors({
   origin: (origin, callback) => callback(null, origin === frontendOrigin),
-  methods: ["GET", "PATCH", "OPTIONS"],
+  methods: ["GET", "POST", "PATCH", "PUT", "OPTIONS"],
   allowedHeaders: ["Authorization", "Content-Type"],
   exposedHeaders: ["x-request-id"],
 }));
@@ -40,5 +44,7 @@ app.get("/api/v1/health", async (_request, response) => {
   response.json({ status: "ok", database: "reachable" });
 });
 app.use("/api/v1", profileRoutes);
+app.use("/api/v1", publicCatalogRoutes);
+app.use("/api/v1/admin", authenticate, requireAdmin, adminCatalogRoutes, uploadRoutes);
 app.use((_request, _response, next) => next(new AppError(404, ERROR_CODE.NOT_FOUND, "Route not found.")));
 app.use(errorHandler);

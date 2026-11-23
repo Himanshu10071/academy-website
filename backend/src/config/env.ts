@@ -15,6 +15,10 @@ const schema = z.object({
   DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(10),
   SUPABASE_URL: httpUrl,
   SUPABASE_ANON_KEY: z.string().trim().min(1).refine((key) => !key.startsWith("sb_secret_")),
+  AWS_REGION: z.string().trim().min(1),
+  AWS_ACCESS_KEY_ID: z.string().trim().min(1),
+  AWS_SECRET_ACCESS_KEY: z.string().trim().min(1),
+  S3_BUCKET: z.string().trim().min(1),
 });
 
 const result = schema.safeParse(process.env);

@@ -10,7 +10,9 @@ export function validate(schema: ZodType, source: "body" | "params" | "query" = 
     if (!result.success) {
       throw new AppError(400, ERROR_CODE.VALIDATION_FAILED, "Check the submitted fields and try again.");
     }
-    response.locals.validated = result.data;
+    if (source === "params") response.locals.validatedParams = result.data;
+    else if (source === "query") response.locals.validatedQuery = result.data;
+    else response.locals.validated = result.data;
     next();
   };
 }

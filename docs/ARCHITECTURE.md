@@ -158,8 +158,10 @@ All routes are under `/api/v1` except the webhook. Names below are the agreed st
 
 **Public (no login)**
 - `GET /health`: verifies database connectivity and returns `503` when the database is unavailable.
-- `GET /courses`, `GET /courses/:slug`: published courses with teacher info and lecture titles and durations. Never video keys.
-- `GET /demos`: published demo lectures.
+- `GET /courses`: published courses with teacher name, bio, and photo.
+- `GET /courses/:slug`: published course and teacher details, plus lecture number, name, and duration for ready, visible lectures.
+- `GET /demos`: published demo metadata ordered by display order.
+- Public catalog responses exclude video keys and teacher email and phone.
 
 **Student (login required)**
 - `GET /me`: returns `id`, `name`, `email`, `phone`, and `role`.
@@ -174,19 +176,23 @@ All routes are under `/api/v1` except the webhook. Names below are the agreed st
 - `POST /api/webhooks/razorpay`
 
 **Admin (login and admin role)**
-- `/admin/teachers`, `/admin/courses`, `/admin/courses/:id/lectures`, `/admin/demos`: create, read, update, hide or deactivate.
-- `POST /admin/lectures/upload-url`: returns a short-lived S3 upload link.
-- `POST /admin/lectures/:id/confirm-upload`: checks the object exists in S3, then sets the lecture `ready`.
+- `GET` and `POST /admin/teachers`, `PATCH /admin/teachers/:id`: list, create, edit, and set `isActive`.
+- `GET` and `POST /admin/courses`, `GET` and `PATCH /admin/courses/:id`: list, create, read, and edit. Prices are in paise. Slugs are generated on creation and can be edited.
+- `PATCH /admin/courses/:id/publication`: toggle `isPublished`. Publishing requires a teacher, a description, a thumbnail, and at least one ready, visible lecture.
+- `GET /admin/courses/:id/lectures`, `PATCH /admin/lectures/:id`, `PUT /admin/courses/:id/lectures/order`: list, rename or hide, and reorder using the full set of lecture IDs.
+- `POST /admin/lectures/upload-url`: create an uploaded lecture and return a 15-minute S3 MP4 PUT URL and its required headers.
+- `POST /admin/lectures/:id/confirm-upload`: verify the S3 object, save duration in seconds, and set the lecture `ready`.
+- `GET /admin/demos`, `POST /admin/demos/upload-url`, `PATCH /admin/demos/:id`, `PATCH /admin/demos/:id/publication`: list, upload an unpublished demo, edit metadata and display order, and toggle publication. Publishing verifies the S3 object.
 - `GET /admin/payments`, `GET /admin/refund-requests`.
 - `POST /admin/refund-requests/:id/approve`, `POST /admin/refund-requests/:id/reject`.
 
 ### 3.5 Video upload flow
 
 1. Admin asks for an upload link. The backend creates the lecture row (status `uploaded`) with a generated key such as `lectures/<courseId>/<uuid>.mp4`, and returns a short-lived presigned upload URL.
-2. The admin's browser uploads straight to S3. The video never passes through our server.
+2. The browser reads the video duration and uploads directly to the private bucket with the signed `Content-Type: video/mp4` and `If-None-Match: *` headers. The conditional PUT prevents reuse of the signed URL to overwrite a completed upload.
 3. The admin confirms. The backend checks the object exists, then sets the status to `ready`. The `lecture_count` trigger updates the course.
 
-The bucket needs CORS configured for the frontend's address. Maximum lecture size is an open decision (a single upload link supports up to 5 GB).
+The bucket needs CORS configured to allow `PUT`, `Content-Type`, and `If-None-Match` from the frontend's address. Demos use `demos/<uuid>.mp4` and are verified when published. Maximum lecture size is an open decision (a single upload link supports up to 5 GB).
 
 ---
 
@@ -221,7 +227,7 @@ frontend/
 Rules:
 - **Public pages are server-rendered** (for search visibility). The player, checkout, and dashboards are client-side.
 - **The frontend never queries the database or Supabase tables.** It calls the Supabase library only to sign in and to get the session token. All data comes from the backend through `lib/api/`.
-- Every API call attaches the session token. Redirects to the login page for protected routes are only a convenience. **The backend is what actually protects data.**
+- Every protected API call attaches the session token. Public catalog pages fetch metadata on the server. Redirects for protected routes are a convenience. **The backend is what actually protects data.**
 - The frontend shows what the backend allows and never decides access. A hidden button is not security.
 - Components are PascalCase `.tsx` files, hooks start with `use`, and other files are kebab-case.
 - Only `NEXT_PUBLIC_` variables exist in the frontend. If a value is secret, it must not be there.
@@ -262,7 +268,7 @@ Backend variables:
 - Razorpay: `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`
 - Business: `REFUND_WINDOW_DAYS` (3)
 
-Validate the app, database, and Supabase Auth settings at startup. Introduce the AWS, CloudFront, Razorpay, and business settings when their features are implemented.
+Validate the app, database, Supabase Auth, and AWS upload settings at startup. Introduce the CloudFront, Razorpay, and business settings when their features are implemented.
 
 Frontend variables (these are public by design): `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SUPABASE_URL`, and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Add `NEXT_PUBLIC_RAZORPAY_KEY_ID` with checkout. The Supabase key variables accept a legacy anon key or a publishable key.
 
@@ -309,6 +315,9 @@ Every failure returns the same structure: an error object with a machine-readabl
 | `REFUND_NOT_ALLOWED` | payment not captured, or enrollment not paid |
 | `UPSTREAM_FAILED` | S3, CloudFront, or Razorpay returned an error |
 | `INTERNAL_ERROR` | unexpected server error |
+| `COURSE_NOT_PUBLISHABLE` | course is missing published-course requirements |
+| `COURSE_SLUG_TAKEN` | course slug already exists |
+| `UPLOAD_NOT_FOUND` | video object is missing from S3 |
 
 Services throw an `AppError` with one of these codes. Only `error-handler.ts` turns errors into responses. Unknown errors become a generic server error with no internal details exposed.
 
