@@ -24,4 +24,12 @@ Run `npm run typecheck` to check the TypeScript workspaces and `npm run build` t
 
 Run `npm test --workspace=backend` for authentication and transaction tests.
 
+## Configure catalog uploads
+
+Set `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `S3_BUCKET` in the backend environment. Use a private bucket with S3 Block Public Access enabled. Let the backend principal put and inspect objects under `lectures/` and `demos/`. Grant `s3:ListBucket` on this bucket so a missing object returns `404` during confirmation. [AWS HeadObject permissions](https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html)
+
+In the bucket's CORS settings, allow `PUT` from the app's frontend origin (for example, `http://localhost:3000`) with the `Content-Type` and `If-None-Match` headers. Sign in with an admin account and open **Manage catalog** to upload videos.
+
+For catalog integration tests, point `DATABASE_URL_TEST` to a separate PostgreSQL database with `test` as a segment in its name and the initial schema applied. The tests use dedicated fixtures and mock Supabase Auth and S3. Never set this to the application database.
+
 If PostgreSQL reports `SELF_SIGNED_CERT_IN_CHAIN`, download the Supabase root certificate from **Database Settings → SSL Configuration**. In `DATABASE_URL`, set `sslmode=verify-full` and `sslrootcert` to the URL-encoded certificate path. Resolve relative paths from the backend working directory. [Supabase SSL guide](https://supabase.com/docs/guides/platform/ssl-enforcement)

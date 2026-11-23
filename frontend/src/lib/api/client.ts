@@ -8,17 +8,20 @@ export class ApiError extends Error {
 
 export async function apiRequest<T>(
   path: string,
-  token: string,
-  { signal, body }: { signal?: AbortSignal; body?: object } = {},
+  token?: string,
+  { signal, body, method = body ? "PATCH" : "GET" }: {
+    signal?: AbortSignal; body?: object; method?: "GET" | "POST" | "PATCH" | "PUT";
+  } = {},
 ): Promise<T> {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
   if (!baseUrl) throw new Error("The academy API is unavailable.");
 
+  const headers = new Headers();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  if (body) headers.set("Content-Type", "application/json");
   const response = await fetch(new URL(`/api/v1${path}`, baseUrl), {
-    method: body ? "PATCH" : "GET",
-    headers: body
-      ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
-      : { Authorization: `Bearer ${token}` },
+    method,
+    headers,
     body: body ? JSON.stringify(body) : undefined,
     cache: "no-store",
     signal,

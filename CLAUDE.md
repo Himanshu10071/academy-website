@@ -173,7 +173,7 @@ Write tests for the dangerous paths. A task touching these is not done without t
 
 ## 12. Build order and status
 
-Status: initial schema, backend authentication and profile endpoints, and Google sign-in with profile completion are implemented. The Prince Academy homepage has empty states for courses and demos.
+Status: initial schema, authentication and profile completion, admin catalog and S3 uploads, and public catalog pages are implemented.
 
 0. Repo setup, this brief, folder layout, environment handling.
 1. Database migrations, RLS on, triggers (updated_at, lecture_count, profile creation).

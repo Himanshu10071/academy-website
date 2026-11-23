@@ -1,5 +1,8 @@
 "use client";
 
+import { ROLE } from "@academy/shared";
+import Link from "next/link";
+
 import { useAccount } from "./AccountProvider";
 
 export function GoogleSignIn({ primary = false }: { primary?: boolean }) {
@@ -20,11 +23,12 @@ export function AcademyHeader() {
   return (
     <header className="site-header">
       <div className="container header-inner">
-        <a className="wordmark" href="/">Prince Academy</a>
+        <Link className="wordmark" href="/">Prince Academy</Link>
         {signedIn ? (
           <div className="account-actions">
             {profile && <>
               <span className="account-name">{profile.name}</span>
+              {profile.role === ROLE.ADMIN && <Link className="button button-quiet" href="/admin">Manage catalog</Link>}
               <button className="button button-quiet" type="button" onClick={() => edit(profile.phone?.trim() ? "edit" : "phone")}>
                 {profile.phone?.trim() ? "Edit profile" : "Add phone number"}
               </button>

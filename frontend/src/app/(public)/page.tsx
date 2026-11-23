@@ -1,5 +1,8 @@
-import { AcademyHeader, GoogleSignIn } from "../../components/layout/AcademyHeader";
-import { AccountProvider } from "../../components/layout/AccountProvider";
+import { CourseCard, DemoCard } from "../../components/course/CatalogCards";
+import { GoogleSignIn } from "../../components/layout/AcademyHeader";
+import { listCourses, listDemos } from "../../lib/api/catalog";
+
+export const dynamic = "force-dynamic";
 
 const benefits = [
   "Expert teachers",
@@ -7,10 +10,10 @@ const benefits = [
   "Pay once, watch anytime",
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [courses, demos] = await Promise.allSettled([listCourses(), listDemos()]);
+
   return (
-    <AccountProvider>
-      <AcademyHeader />
       <main>
         <section className="hero" aria-labelledby="hero-title">
           <div className="container hero-inner">
@@ -25,11 +28,15 @@ export default function HomePage() {
         <div className="container sections">
           <section id="courses" aria-labelledby="courses-title">
             <h2 id="courses-title">Courses</h2>
-            <p className="empty-state">Courses coming soon</p>
+            {courses.status === "rejected" ? <p className="empty-state">Courses are temporarily unavailable.</p>
+              : courses.value.length === 0 ? <p className="empty-state">Courses coming soon</p>
+                : <div className="catalog-grid">{courses.value.map((course) => <CourseCard key={course.id} course={course} />)}</div>}
           </section>
           <section id="demos" aria-labelledby="demos-title">
             <h2 id="demos-title">Free demos</h2>
-            <p className="empty-state">Demo lectures coming soon</p>
+            {demos.status === "rejected" ? <p className="empty-state">Demo lectures are temporarily unavailable.</p>
+              : demos.value.length === 0 ? <p className="empty-state">Demo lectures coming soon</p>
+                : <div className="catalog-grid">{demos.value.map((demo) => <DemoCard key={demo.id} demo={demo} />)}</div>}
           </section>
           <section className="benefits" aria-labelledby="benefits-title">
             <h2 id="benefits-title">Why Prince Academy</h2>
@@ -37,13 +44,5 @@ export default function HomePage() {
           </section>
         </div>
       </main>
-      <footer className="site-footer">
-        <div className="container footer-inner">
-          <div><strong>Prince Academy</strong><p>Focused learning at your own pace.</p></div>
-          <nav aria-label="Footer"><a href="#courses">Courses</a><a href="#demos">Demos</a></nav>
-          <small>© 2026 Prince Academy</small>
-        </div>
-      </footer>
-    </AccountProvider>
   );
 }

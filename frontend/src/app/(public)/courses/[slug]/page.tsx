@@ -1,0 +1,52 @@
+import { ERROR_CODE } from "@academy/shared";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+
+import { CatalogImage } from "../../../../components/course/CatalogCards";
+import { getCourse } from "../../../../lib/api/catalog";
+import { ApiError } from "../../../../lib/api/client";
+import { formatDuration, formatPrice } from "../../../../lib/catalog-format";
+
+export default async function CoursePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  if (slug.length > 180 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) notFound();
+
+  let course;
+  try {
+    course = await getCourse(slug);
+  } catch (error) {
+    if (error instanceof ApiError && error.failure.code === ERROR_CODE.NOT_FOUND) notFound();
+    return <main className="container sections"><p className="empty-state">This course is temporarily unavailable.</p></main>;
+  }
+
+  return (
+    <main className="container sections course-detail">
+      <section className="course-heading">
+        <div>
+          <Link className="catalog-back" href="/#courses">← Courses</Link>
+          <h1>{course.name}</h1>
+          <p>{course.description}</p>
+          <strong>{formatPrice(course.pricePaise)}</strong>
+        </div>
+        {course.thumbnailUrl && <CatalogImage url={course.thumbnailUrl} />}
+      </section>
+      <section aria-labelledby="teacher-heading">
+        <h2 id="teacher-heading">Your teacher</h2>
+        <div className="teacher-panel">
+          {course.teacher.photoUrl && <CatalogImage url={course.teacher.photoUrl} />}
+          <div><h3>{course.teacher.name}</h3>{course.teacher.bio && <p>{course.teacher.bio}</p>}</div>
+        </div>
+      </section>
+      <section aria-labelledby="curriculum-heading">
+        <h2 id="curriculum-heading">Curriculum</h2>
+        {course.lectures.length ? <ol className="curriculum">
+          {course.lectures.map((lecture) => (
+            <li key={lecture.lectureNumber} value={lecture.lectureNumber}>
+              <span>{lecture.lectureNumber}. {lecture.name}</span><span>{formatDuration(lecture.duration)}</span>
+            </li>
+          ))}
+        </ol> : <p className="empty-state">No lectures are listed yet.</p>}
+      </section>
+    </main>
+  );
+}
