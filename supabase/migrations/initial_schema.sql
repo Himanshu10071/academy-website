@@ -454,9 +454,9 @@ create trigger on_auth_user_created
 
 
 -- ---------------------------------------------------------------------
--- 11. Row Level Security: ON for every table, with NO policies.
---     The public (anon) key can read and write nothing. Only the backend,
---     using the service key, touches data. Do not add policies.
+--     The Supabase Data API is also disabled, and the public (anon) key can
+--     read and write nothing. Only the backend, connecting directly to
+--     Postgres, touches data. Do not add policies.
 -- ---------------------------------------------------------------------
 alter table public.profiles        enable row level security;
 alter table public.teachers        enable row level security;
