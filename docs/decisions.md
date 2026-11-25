@@ -14,3 +14,4 @@
 - 2026-11-25 — Open Razorpay Checkout from a published course with a saved backend order. The browser callback starts confirmation.
 - 2026-11-25 — Accept full refund requests within the saved refund window for the caller's captured payment and paid enrollment. Expose the local payment ID and eligibility on owned courses.
 - 2026-11-25 — Keep approved refunds open until Razorpay confirms processing. Use a durable idempotency key for safe retry and a single transaction to revoke enrollment on confirmed refunds.
+- 2026-11-25 — Add the student refund request action to My Courses and show status and admin notes in refund history.

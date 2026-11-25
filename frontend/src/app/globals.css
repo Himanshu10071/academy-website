@@ -171,6 +171,18 @@ a.catalog-card:hover { border-color: #7786b0; }
 .course-heading p, .teacher-panel p { color: var(--muted); white-space: pre-wrap; }
 .course-heading strong { color: var(--accent); }
 .course-purchase { margin-top: 1rem; }
+.owned-course { display: grid; align-content: start; gap: .6rem; min-width: 0; }
+.refund-card-action { margin: 0 .25rem; }
+.refund-dialog textarea {
+  width: 100%;
+  resize: vertical;
+  padding: .55rem .65rem;
+  border: 1px solid var(--border);
+  border-radius: .5rem;
+  background: var(--ink);
+  color: var(--text);
+  font: inherit;
+}
 .payment-toast {
   position: fixed;
   z-index: 20;

@@ -38,3 +38,15 @@ export function checkoutError(error: unknown) {
     default: return fallback;
   }
 }
+
+export function refundError(error: unknown, fallback = "Could not save the refund request. Please try again.") {
+  if (!(error instanceof ApiError)) return fallback;
+  switch (error.failure.code) {
+    case ERROR_CODE.REFUND_NOT_ALLOWED: return "This purchase is no longer eligible for a refund.";
+    case ERROR_CODE.REFUND_WINDOW_CLOSED: return "The three-day refund window has closed.";
+    case ERROR_CODE.REFUND_ALREADY_OPEN: return "You already have a refund request for this purchase.";
+    case ERROR_CODE.CONFLICT: return "This refund request has already changed. Refresh the list to see its current status.";
+    case ERROR_CODE.UPSTREAM_FAILED: return "Razorpay could not complete the refund. You can retry it from the Failed filter.";
+    default: return fallback;
+  }
+}

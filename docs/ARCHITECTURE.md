@@ -209,7 +209,7 @@ frontend/
     ├── app/                          Next.js App Router: one folder per URL
     │   ├── (public)/                 course list, course page, demos (server-rendered)
     │   ├── login/
-    │   ├── (student)/                my-courses, watch/[lectureId], checkout/[slug], payment/processing/[courseId]
+    │   ├── (student)/                my-courses, account/refunds, watch/[lectureId], checkout/[slug], payment/processing/[courseId]
     │   └── (admin)/admin/            teachers, courses, lectures, demos, payments, refunds
     │
     ├── components/
@@ -238,6 +238,7 @@ Rules:
 - Payment success pages only poll the backend for the enrollment status. They never mark anything as paid.
 - Confirmation polls every three seconds for up to 90 seconds. A paid response redirects to the course slug from the backend or to My Courses and shows the success toast at the destination.
 - Checkout uses the order ID and amount returned by the backend.
+- My Courses shows refund eligibility from the backend and stops offering a request after the deadline. Student refund history lives at `/account/refunds`.
 
 ---
 
