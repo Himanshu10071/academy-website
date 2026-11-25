@@ -43,4 +43,4 @@ If PostgreSQL reports `SELF_SIGNED_CERT_IN_CHAIN`, download the Supabase root ce
 3. From the repository root, run `npm run tunnel` and copy the printed `https://*.trycloudflare.com` address. The tunnel uses `PORT` from `backend/.env`. [Cloudflare Quick Tunnels](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/)
 4. In Razorpay Test Mode, set the webhook URL to that address followed by `/api/webhooks/razorpay` and enter the same webhook secret. Update the dashboard URL every time the tunnel restarts and prints a new address. [Razorpay webhook testing guide](https://razorpay.com/docs/webhooks/validate-test)
 
-The receiver records deliveries in `payment_events` with `processed = false`.
+Subscribe to `payment.captured` and enable automatic capture in Razorpay. Verified captures for matching academy orders are marked processed and grant the enrollment. Other deliveries are recorded for inspection. [Razorpay payment webhooks](https://razorpay.com/docs/webhooks/payments/)

@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHmac, randomUUID } from "node:crypto";
 import { ENROLLMENT_STATUS, ERROR_CODE, PAYMENT_CURRENCY, PAYMENT_STATUS, ROLE } from "@academy/shared";
 import request from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -7,13 +7,15 @@ import { app } from "../../src/app.ts";
 import { database } from "../../src/lib/db.ts";
 import { AppError } from "../../src/lib/errors.ts";
 
-const { createRazorpayOrder, verifyAccessToken, testDatabaseUrl } = vi.hoisted(() => ({
+const { secret, createRazorpayOrder, verifyAccessToken, testDatabaseUrl } = vi.hoisted(() => ({
+  secret: "capture-test-fixture",
   createRazorpayOrder: vi.fn(), verifyAccessToken: vi.fn(), testDatabaseUrl: process.env.DATABASE_URL_TEST,
 }));
 
 vi.mock("../../src/config/env.ts", () => ({ env: {
   NODE_ENV: "test", FRONTEND_URL: "http://localhost:3000", DATABASE_POOL_MAX: 3,
   DATABASE_URL: testDatabaseUrl ?? "postgresql://test@127.0.0.1:1/unused?sslmode=disable",
+  RAZORPAY_WEBHOOK_SECRET: secret,
 } }));
 vi.mock("../../src/lib/supabase-auth.ts", () => ({ verifyAccessToken }));
 vi.mock("../../src/lib/razorpay.ts", async (original) => ({
@@ -26,6 +28,7 @@ const blockedId = randomUUID();
 const adminId = randomUUID();
 const teacherId = randomUUID();
 const courseIds: string[] = [];
+const eventIds: string[] = [];
 let courseId: string;
 let prepared = false;
 
@@ -35,6 +38,24 @@ function checkout(token = "student", id = courseId) {
 
 function status(token = "student") {
   return request(app).get(`/api/v1/courses/${courseId}/enrollment-status`).set("Authorization", `Bearer ${token}`);
+}
+
+const paidAt = new Date("2026-11-25T12:00:00.000Z");
+
+function capture(orderId: string, {
+  paymentId = `pay_${randomUUID().replaceAll("-", "")}`, amount = 49900, valid = true, eventId = randomUUID(),
+} = {}) {
+  eventIds.push(eventId);
+  const body = JSON.stringify({
+    event: "payment.captured",
+    payload: { payment: { entity: {
+      id: paymentId, order_id: orderId, amount, currency: PAYMENT_CURRENCY,
+      status: PAYMENT_STATUS.CAPTURED, created_at: paidAt.getTime() / 1000,
+    } } },
+  });
+  const signature = valid ? createHmac("sha256", secret).update(body).digest("hex") : "invalid";
+  return request(app).post("/api/webhooks/razorpay").type("application/json").send(body)
+    .set("X-Razorpay-Event-Id", eventId).set("X-Razorpay-Signature", signature);
 }
 
 async function rows() {
@@ -77,6 +98,7 @@ describe.skipIf(!testDatabaseUrl)("student checkout with PostgreSQL", () => {
   afterAll(async () => {
     try {
       if (!prepared) return;
+      await database.query("DELETE FROM public.payment_events WHERE razorpay_event_id = ANY($1::text[])", [eventIds]);
       await database.query("DELETE FROM public.payments WHERE enrollment_id IN (SELECT id FROM public.enrollments WHERE course_id = ANY($1::uuid[]))", [courseIds]);
       await database.query("DELETE FROM public.enrollments WHERE course_id = ANY($1::uuid[])", [courseIds]);
       await database.query("DELETE FROM public.courses WHERE id = ANY($1::uuid[])", [courseIds]);
@@ -143,5 +165,64 @@ describe.skipIf(!testDatabaseUrl)("student checkout with PostgreSQL", () => {
     expect(createRazorpayOrder).not.toHaveBeenCalled();
     await database.query("UPDATE public.courses SET is_published = FALSE WHERE id = $1", [courseId]);
     expect((await status()).body).toEqual({ status: ENROLLMENT_STATUS.PAID, courseSlug: null });
+  });
+
+  it("records forged and wrong-amount captures without granting access", async () => {
+    const { body } = await checkout();
+    const rejectedId = randomUUID();
+    const forged = await capture(body.orderId, { valid: false, eventId: rejectedId });
+    expect(forged.status).toBe(400);
+    expect((await capture(body.orderId, { amount: 1, eventId: rejectedId })).status).toBe(200);
+    const events = await database.query(
+      "SELECT signature_verified, processed, error_note FROM public.payment_events WHERE razorpay_event_id = $1 ORDER BY signature_verified",
+      [rejectedId],
+    );
+    expect(events.rows).toEqual([
+      { signature_verified: false, processed: false, error_note: null },
+      { signature_verified: true, processed: false, error_note: ERROR_CODE.PAYMENT_AMOUNT_MISMATCH },
+    ]);
+    expect((await status()).body.status).toBe(ENROLLMENT_STATUS.PENDING);
+    expect((await rows())[0].payment_status).toBe(PAYMENT_STATUS.CREATED);
+  });
+
+  it("grants access only after a verified capture and preserves timestamps on concurrent replays", async () => {
+    const { body } = await checkout();
+    const eventId = randomUUID();
+    const paymentId = `pay_${randomUUID().replaceAll("-", "")}`;
+    const options = { paymentId, eventId };
+    const results = await Promise.all([
+      capture(body.orderId, options), capture(body.orderId, options), capture(body.orderId, { paymentId }),
+    ]);
+    expect(results.map(({ status }) => status)).toEqual([200, 200, 200]);
+    expect((await status()).body).toEqual({ status: ENROLLMENT_STATUS.PAID, courseSlug: `checkout-${courseId}` });
+    const payments = await database.query(
+      "SELECT status, razorpay_payment_id, paid_at, refund_eligible_until FROM public.payments WHERE razorpay_order_id = $1",
+      [body.orderId],
+    );
+    expect(payments.rows).toEqual([{
+      status: PAYMENT_STATUS.CAPTURED, razorpay_payment_id: paymentId, paid_at: paidAt,
+      refund_eligible_until: new Date("2026-11-28T12:00:00.000Z"),
+    }]);
+    const events = await database.query(
+      "SELECT processed, error_note FROM public.payment_events WHERE razorpay_event_id = $1",
+      [eventId],
+    );
+    expect(events.rows).toEqual([{ processed: true, error_note: null }]);
+    expect((await checkout()).body.error.code).toBe(ERROR_CODE.ALREADY_ENROLLED);
+  });
+
+  it("does not reactivate a revoked enrollment when its old payment is replayed", async () => {
+    const { body } = await checkout();
+    const paymentId = `pay_${randomUUID().replaceAll("-", "")}`;
+    expect((await capture(body.orderId, { paymentId })).status).toBe(200);
+    await database.query("UPDATE public.enrollments SET status = $2, revoked_at = now() WHERE course_id = $1",
+      [courseId, ENROLLMENT_STATUS.REVOKED]);
+    await database.query("UPDATE public.payments SET status = $2, refunded_at = now() WHERE razorpay_order_id = $1",
+      [body.orderId, PAYMENT_STATUS.REFUNDED]);
+    expect((await capture(body.orderId, { paymentId })).status).toBe(200);
+    expect((await status()).body).toEqual({ status: ENROLLMENT_STATUS.REVOKED, courseSlug: null });
+    const next = await checkout();
+    expect(next.status).toBe(200);
+    expect(next.body.orderId).not.toBe(body.orderId);
   });
 });

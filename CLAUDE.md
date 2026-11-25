@@ -79,7 +79,7 @@ Nine tables. Full field list lives in `docs/schema.md` and the migration files. 
 - `demo_lectures`: standalone, published flag, display order.
 - `enrollments`: student plus course, status `pending`, `paid`, or `revoked`.
 - `payments`: one per payment attempt, linked to an enrollment. Amount is a snapshot of the price at order time.
-- `payment_events`: raw log of every Razorpay webhook received. Never edited.
+- `payment_events`: log of Razorpay webhook deliveries. The raw payload stays immutable. Capture handling updates only the processing fields.
 - `refund_requests`: linked to a payment, with its own status lifecycle.
 
 Key constraints the database enforces:
@@ -127,16 +127,16 @@ Row Level Security is **enabled on every table with no policies**, and the Supab
 ### 9.3 Purchase
 1. Student asks to buy a course. The backend checks the course is published and the profile is complete.
 2. It looks for an existing active enrollment for that student and course. If it is `paid`, stop. If it is `pending`, reuse it. If none exists, create a `pending` one. If creation collides with the unique rule (double-click), read the existing row instead of failing.
-3. The backend creates a `payments` row and a Razorpay order, using the **price from the database** as the amount, and returns the order id.
+3. If a pending enrollment has an open order, return that order and its saved amount. Otherwise create a Razorpay order using the **price from the database**, save the payment attempt, and return its order ID, amount in paise, and currency.
 4. The Razorpay checkout runs in the browser. The browser result is never trusted.
 
 ### 9.4 Razorpay webhook
-The receiver is implemented through verification and event logging. Capture processing is planned for a later milestone.
+The receiver verifies and records deliveries and applies verified `payment.captured` events.
 
 1. Use the **raw request body**. Compute HMAC-SHA256 with the webhook secret and compare to the `X-Razorpay-Signature` header using a constant-time comparison.
 2. Require the event ID and signature headers and a valid JSON event. Store each accepted delivery with `signature_verified` true or false and `processed = false`. Return 400 for a bad signature after storing its event.
 3. Acknowledge repeated verified event IDs with 200. Unknown event types are stored.
-4. For a captured payment: confirm the order id exists and the amount matches the stored amount, then in **one database transaction** set the payment to `captured` with `paid_at`, set `refund_eligible_until` to `paid_at` plus 3 days, and set the enrollment to `paid`.
+4. For a captured payment: confirm the order, amount, currency and pending enrollment, then in **one database transaction** set the payment to `captured` with `paid_at`, set `refund_eligible_until` to `paid_at` plus 3 days, set the enrollment to `paid`, and mark the event processed.
 5. Respond with 200 quickly. Unknown event types are stored and ignored, not rejected.
 6. The Razorpay account must use automatic capture so that successful payments reach the captured state.
 
@@ -173,7 +173,7 @@ Write tests for the dangerous paths. A task touching these is not done without t
 
 ## 12. Build order and status
 
-Status: initial schema, authentication and profile completion, admin catalog and S3 uploads, public catalog pages, paid lecture playback, and admin lecture preview are implemented. Playback uses a temporary S3 signer. The Razorpay receiver verifies and records events.
+Status: initial schema, authentication and profile completion, admin catalog and S3 uploads, public catalog pages, paid lecture playback, and admin lecture preview are implemented. Playback uses a temporary S3 signer. The backend creates Razorpay Test Mode orders and processes verified captures.
 
 0. Repo setup, this brief, folder layout, environment handling.
 1. Database migrations, RLS on, triggers (updated_at, lecture_count, profile creation).

@@ -9,3 +9,4 @@
 - 2026-11-25 — Add the Razorpay receiver for signature verification and insert-only event logging. Use a Cloudflare Quick Tunnel for local Test Mode deliveries. Capture and enrollment updates are deferred.
 - 2026-11-25 — Split larger tasks into independently reviewable commits. Keep each change with its related tests and documentation.
 - 2026-11-25 — Enable Test Mode order creation with backend-only keys. Serialize checkout per student and reuse an existing order. Return the current published course slug from the paid enrollment status.
+- 2026-11-25 — Apply verified Razorpay captures atomically. Record mismatches for investigation and keep access unchanged when the amount, currency, or enrollment does not match.

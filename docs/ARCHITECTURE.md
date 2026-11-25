@@ -175,7 +175,7 @@ All routes are under `/api/v1` except the webhook. Names below are the agreed st
 - `POST /refund-requests`, `GET /me/refund-requests`.
 
 **Webhook (no login, signature verified)**
-- `POST /api/webhooks/razorpay` receives JSON with a 1 MB limit and requires the Razorpay event ID and signature headers. It records signature results in `payment_events`. Valid signatures and duplicate verified event IDs return 200. Invalid signatures return 400 after logging the event. Missing headers or invalid JSON return 400 without inserting an event.
+- `POST /api/webhooks/razorpay` receives raw JSON with a 1 MB limit and requires the Razorpay event ID and signature headers. A verified capture checks the saved order, amount and currency, then updates the payment, enrollment and event together. Duplicate verified IDs return 200. Invalid signatures return 400 after logging the delivery. Missing headers or invalid JSON return 400 without inserting an event.
 
 **Admin (login and admin role)**
 - `GET` and `POST /admin/teachers`, `PATCH /admin/teachers/:id`: list, create, edit, and set `isActive`.
@@ -358,7 +358,7 @@ Services throw an `AppError` with one of these codes. Only `error-handler.ts` tu
 ### 8.4 Health and observability
 
 - `GET /api/v1/health` returns OK and confirms the database is reachable. No sensitive details.
-- The Razorpay receiver stores accepted deliveries with `processed = false`. Its event log includes only the request ID, event ID, event type, and signature verification result. Recording processing failures in `payment_events.error_note` is part of the future capture milestone.
+- The Razorpay receiver marks successful captures processed. Verified captures that cannot be applied stay unprocessed with an `error_note`. Database failures roll back the event and payment changes so Razorpay can retry. The event log includes only the request ID, event ID, event type, and signature verification result.
 
 ---
 
