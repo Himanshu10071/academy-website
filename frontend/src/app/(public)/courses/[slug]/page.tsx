@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { CatalogImage } from "../../../../components/course/CatalogCards";
 import { CourseCurriculum } from "../../../../components/course/Curriculum";
+import { PaymentSuccessToast } from "../../../../components/payment/PaymentSuccessToast";
 import { getCourse } from "../../../../lib/api/catalog";
 import { ApiError } from "../../../../lib/api/client";
 import { formatPrice } from "../../../../lib/catalog-format";
@@ -22,6 +23,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
 
   return (
     <main className="container sections course-detail">
+      <PaymentSuccessToast destination={`/courses/${course.slug}`} />
       <section className="course-heading">
         <div>
           <Link className="catalog-back" href="/#courses">← Courses</Link>

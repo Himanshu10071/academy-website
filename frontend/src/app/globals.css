@@ -170,6 +170,20 @@ a.catalog-card:hover { border-color: #7786b0; }
 .course-heading h1 { margin: .65rem 0; font-size: clamp(2rem, 6vw, 4rem); line-height: 1.1; letter-spacing: -.04em; }
 .course-heading p, .teacher-panel p { color: var(--muted); white-space: pre-wrap; }
 .course-heading strong { color: var(--accent); }
+.payment-toast {
+  position: fixed;
+  z-index: 20;
+  top: 1rem;
+  right: 1rem;
+  max-width: calc(100vw - 2rem);
+  margin: 0;
+  padding: .75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: .75rem;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 .4rem 1.8rem #080a1280;
+}
 .course-heading .catalog-image { border-radius: .75rem; }
 .teacher-panel { display: flex; align-items: flex-start; gap: 1rem; }
 .teacher-panel .catalog-image { flex: none; width: 4rem; aspect-ratio: 1; border-radius: .65rem; }

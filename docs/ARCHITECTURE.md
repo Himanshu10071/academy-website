@@ -208,7 +208,7 @@ frontend/
     ├── app/                          Next.js App Router: one folder per URL
     │   ├── (public)/                 course list, course page, demos (server-rendered)
     │   ├── login/
-    │   ├── (student)/                my-courses, watch/[lectureId], checkout/[slug], profile
+    │   ├── (student)/                my-courses, watch/[lectureId], checkout/[slug], payment/processing/[courseId]
     │   └── (admin)/admin/            teachers, courses, lectures, demos, payments, refunds
     │
     ├── components/
@@ -235,6 +235,7 @@ Rules:
 - Components are PascalCase `.tsx` files, hooks start with `use`, and other files are kebab-case.
 - Only `NEXT_PUBLIC_` variables exist in the frontend. If a value is secret, it must not be there.
 - Payment success pages only poll the backend for the enrollment status. They never mark anything as paid.
+- Confirmation polls every three seconds for up to 90 seconds. A paid response redirects to the course slug from the backend or to My Courses and shows the success toast at the destination.
 
 ---
 

@@ -44,3 +44,5 @@ If PostgreSQL reports `SELF_SIGNED_CERT_IN_CHAIN`, download the Supabase root ce
 4. In Razorpay Test Mode, set the webhook URL to that address followed by `/api/webhooks/razorpay` and enter the same webhook secret. Update the dashboard URL every time the tunnel restarts and prints a new address. [Razorpay webhook testing guide](https://razorpay.com/docs/webhooks/validate-test)
 
 Subscribe to `payment.captured` and enable automatic capture in Razorpay. Verified captures for matching academy orders are marked processed and grant the enrollment. Other deliveries are recorded for inspection. [Razorpay payment webhooks](https://razorpay.com/docs/webhooks/payments/)
+
+Run the frontend component tests with `npm test --workspace=@academy/frontend`.
