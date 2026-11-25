@@ -11,7 +11,7 @@ export function GoogleSignIn({ primary = false }: { primary?: boolean }) {
 
   return (
     <button className={`button ${primary ? "button-primary" : "button-secondary"}`}
-      type="button" disabled={!ready || busy} onClick={signIn}>
+      type="button" disabled={!ready || busy} onClick={() => void signIn()}>
       {busy ? "Opening Google…" : "Sign in with Google"}
     </button>
   );

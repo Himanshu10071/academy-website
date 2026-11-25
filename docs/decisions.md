@@ -11,3 +11,4 @@
 - 2026-11-25 — Enable Test Mode order creation with backend-only keys. Serialize checkout per student and reuse an existing order. Return the current published course slug from the paid enrollment status.
 - 2026-11-25 — Apply verified Razorpay captures atomically. Record mismatches for investigation and keep access unchanged when the amount, currency, or enrollment does not match.
 - 2026-11-25 — Add student payment confirmation. The URL uses only the course ID. The backend resolves the destination after capture, and the destination displays a one-time success toast.
+- 2026-11-25 — Open Razorpay Checkout from a published course with a saved backend order. The browser callback starts confirmation.

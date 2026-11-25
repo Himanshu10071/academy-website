@@ -128,7 +128,7 @@ Row Level Security is **enabled on every table with no policies**, and the Supab
 1. Student asks to buy a course. The backend checks the course is published and the profile is complete.
 2. It looks for an existing active enrollment for that student and course. If it is `paid`, stop. If it is `pending`, reuse it. If none exists, create a `pending` one. If creation collides with the unique rule (double-click), read the existing row instead of failing.
 3. If a pending enrollment has an open order, return that order and its saved amount. Otherwise create a Razorpay order using the **price from the database**, save the payment attempt, and return its order ID, amount in paise, and currency.
-4. The Razorpay checkout runs in the browser. The browser result is never trusted.
+4. The Razorpay checkout runs in the browser. The success callback opens the confirmation page, which polls enrollment status. A paid response triggers a redirect to the current course and a one-time success toast.
 
 ### 9.4 Razorpay webhook
 The receiver verifies and records deliveries and applies verified `payment.captured` events.
@@ -173,7 +173,7 @@ Write tests for the dangerous paths. A task touching these is not done without t
 
 ## 12. Build order and status
 
-Status: initial schema, authentication and profile completion, admin catalog and S3 uploads, public catalog pages, paid lecture playback, and admin lecture preview are implemented. Playback uses a temporary S3 signer. The backend creates Razorpay Test Mode orders and processes verified captures.
+Status: initial schema, authentication and profile completion, admin catalog and S3 uploads, public catalog pages, paid lecture playback, admin lecture preview, and Razorpay Test Mode checkout are implemented. Playback uses a temporary S3 signer. Verified captures grant course access.
 
 0. Repo setup, this brief, folder layout, environment handling.
 1. Database migrations, RLS on, triggers (updated_at, lecture_count, profile creation).

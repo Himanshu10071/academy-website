@@ -236,6 +236,7 @@ Rules:
 - Only `NEXT_PUBLIC_` variables exist in the frontend. If a value is secret, it must not be there.
 - Payment success pages only poll the backend for the enrollment status. They never mark anything as paid.
 - Confirmation polls every three seconds for up to 90 seconds. A paid response redirects to the course slug from the backend or to My Courses and shows the success toast at the destination.
+- Checkout uses the order ID and amount returned by the backend.
 
 ---
 
@@ -276,7 +277,7 @@ Backend variables:
 
 Validate the app, database, Supabase Auth, and AWS upload settings at startup. Introduce the CloudFront, Razorpay, and business settings when their features are implemented.
 
-Frontend variables (these are public by design): `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SUPABASE_URL`, and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Add `NEXT_PUBLIC_RAZORPAY_KEY_ID` with checkout. The Supabase key variables accept a legacy anon key or a publishable key.
+Frontend variables are `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and the Test Mode `NEXT_PUBLIC_RAZORPAY_KEY_ID`. The Supabase key variables accept a legacy anon key or a publishable key.
 
 Secret hygiene:
 - The database connection string, AWS keys, CloudFront private key, Razorpay secret, and webhook secret exist only on the backend host. The Supabase service key is not used anywhere.

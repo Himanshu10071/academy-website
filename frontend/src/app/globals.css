@@ -170,6 +170,7 @@ a.catalog-card:hover { border-color: #7786b0; }
 .course-heading h1 { margin: .65rem 0; font-size: clamp(2rem, 6vw, 4rem); line-height: 1.1; letter-spacing: -.04em; }
 .course-heading p, .teacher-panel p { color: var(--muted); white-space: pre-wrap; }
 .course-heading strong { color: var(--accent); }
+.course-purchase { margin-top: 1rem; }
 .payment-toast {
   position: fixed;
   z-index: 20;

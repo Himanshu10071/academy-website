@@ -45,4 +45,6 @@ If PostgreSQL reports `SELF_SIGNED_CERT_IN_CHAIN`, download the Supabase root ce
 
 Subscribe to `payment.captured` and enable automatic capture in Razorpay. Verified captures for matching academy orders are marked processed and grant the enrollment. Other deliveries are recorded for inspection. [Razorpay payment webhooks](https://razorpay.com/docs/webhooks/payments/)
 
+To test from a course page, add the Razorpay Test Mode `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` to `backend/.env`. Add the same public key ID as `NEXT_PUBLIC_RAZORPAY_KEY_ID` in `frontend/.env.local`. Restart both apps, sign in as a student with a phone number, and choose **Buy for** on a published course. Keep the tunnel running until the payment is confirmed. [Razorpay Standard Checkout](https://razorpay.com/docs/payments/payment-gateway/web-integration/standard/integration-steps/)
+
 Run the frontend component tests with `npm test --workspace=@academy/frontend`.

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { CatalogImage } from "../../../../components/course/CatalogCards";
 import { CourseCurriculum } from "../../../../components/course/Curriculum";
+import { CoursePurchase } from "../../../../components/course/CoursePurchase";
 import { PaymentSuccessToast } from "../../../../components/payment/PaymentSuccessToast";
 import { getCourse } from "../../../../lib/api/catalog";
 import { ApiError } from "../../../../lib/api/client";
@@ -30,6 +31,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
           <h1>{course.name}</h1>
           <p>{course.description}</p>
           <strong>{formatPrice(course.pricePaise)}</strong>
+          <div className="course-purchase"><CoursePurchase course={course} /></div>
         </div>
         {course.thumbnailUrl && <CatalogImage url={course.thumbnailUrl} />}
       </section>

@@ -17,12 +17,33 @@ type Account = {
   signedIn: boolean;
   ready: boolean;
   busy: boolean;
-  signIn: () => Promise<void>;
+  signIn: (returnTo?: string) => Promise<void>;
   logout: () => Promise<void>;
   edit: (mode: "phone" | "edit") => void;
 };
 
 const AccountContext = createContext<Account | null>(null);
+const googleReturnKey = "prince-academy:google-course-return";
+const coursePath = /^\/courses\/[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+function rememberGoogleReturn(path?: string) {
+  try {
+    if (path && path.length <= 189 && coursePath.test(path)) sessionStorage.setItem(googleReturnKey, path);
+    else sessionStorage.removeItem(googleReturnKey);
+  } catch {
+    // Google sign-in can still return to the homepage without session storage.
+  }
+}
+
+function takeGoogleReturn() {
+  try {
+    const path = sessionStorage.getItem(googleReturnKey);
+    sessionStorage.removeItem(googleReturnKey);
+    if (path && path.length <= 189 && coursePath.test(path)) return path;
+  } catch {
+    // The homepage is the fallback.
+  }
+}
 
 export function useAccount() {
   const account = useContext(AccountContext);
@@ -45,6 +66,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     try {
       const url = new URL(window.location.href);
       if (url.searchParams.has("error") || new URLSearchParams(url.hash.slice(1)).has("error")) {
+        rememberGoogleReturn();
         setError("Google sign-in did not finish. Please try again.");
         window.history.replaceState(null, "", url.pathname);
       }
@@ -58,6 +80,10 @@ export function AccountProvider({ children }: { children: ReactNode }) {
           if (nextId) setError("");
         }
         setSession(next);
+        if (next && window.location.pathname === "/") {
+          const path = takeGoogleReturn();
+          if (path) window.location.replace(path);
+        }
       });
       return () => subscription.unsubscribe();
     } catch {
@@ -92,9 +118,10 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     return () => controller.abort();
   }, [token]);
 
-  async function signIn() {
+  async function signIn(returnTo?: string) {
     setBusy(true);
     setError("");
+    rememberGoogleReturn(returnTo);
     try {
       const { error } = await getSupabaseBrowser().auth.signInWithOAuth({
         provider: "google",
@@ -104,6 +131,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     } catch {
       // Show the same message for configuration, provider, and network errors.
     }
+    rememberGoogleReturn();
     setError("Could not start Google sign-in. Please try again.");
     setBusy(false);
   }

@@ -25,3 +25,16 @@ export function playbackError(error: unknown) {
     default: return "Could not load the video. Please try again.";
   }
 }
+
+export function checkoutError(error: unknown) {
+  const fallback = "Could not start checkout. Please try again.";
+  if (!(error instanceof ApiError)) return fallback;
+  switch (error.failure.code) {
+    case ERROR_CODE.ALREADY_ENROLLED: return "You already own this course. Open My Courses to watch it.";
+    case ERROR_CODE.PROFILE_INCOMPLETE: return "Add a phone number to your profile before paying.";
+    case ERROR_CODE.AUTH_REQUIRED: return "Your session expired. Sign in again to continue.";
+    case ERROR_CODE.ACCOUNT_BLOCKED: return "This account is blocked.";
+    case ERROR_CODE.UPSTREAM_FAILED: return "Razorpay Checkout is temporarily unavailable. Please try again.";
+    default: return fallback;
+  }
+}
