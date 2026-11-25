@@ -16,7 +16,7 @@ import { uploadRoutes } from "./modules/uploads/uploads.routes.ts";
 import { adminPlaybackRoutes, playbackRoutes } from "./modules/playback/playback.routes.ts";
 import { checkoutRoutes } from "./modules/payments/checkout.routes.ts";
 import { webhookRoutes } from "./modules/payments/webhook.routes.ts";
-import { refundRoutes } from "./modules/refunds/refund.routes.ts";
+import { adminRefundRoutes, refundRoutes } from "./modules/refunds/refund.routes.ts";
 
 export const app = express();
 app.disable("x-powered-by");
@@ -62,6 +62,6 @@ app.use("/api/v1", publicCatalogRoutes);
 app.use("/api/v1", playbackRoutes);
 app.use("/api/v1", checkoutRoutes);
 app.use("/api/v1", refundRoutes);
-app.use("/api/v1/admin", authenticate, requireAdmin, adminCatalogRoutes, uploadRoutes, adminPlaybackRoutes);
+app.use("/api/v1/admin", authenticate, requireAdmin, adminCatalogRoutes, uploadRoutes, adminPlaybackRoutes, adminRefundRoutes);
 app.use((_request, _response, next) => next(new AppError(404, ERROR_CODE.NOT_FOUND, "Route not found.")));
 app.use(errorHandler);

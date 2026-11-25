@@ -176,6 +176,7 @@ All routes are under `/api/v1` except the webhook. Names below are the agreed st
 
 **Webhook (no login, signature verified)**
 - `POST /api/webhooks/razorpay` receives raw JSON with a 1 MB limit and requires the Razorpay event ID and signature headers. A verified capture checks the saved order, amount and currency, then updates the payment, enrollment and event together. Duplicate verified IDs return 200. Invalid signatures return 400 after logging the delivery. Missing headers or invalid JSON return 400 without inserting an event.
+- Verified `refund.processed` and `refund.failed` events match an approved request by refund ID or payment ID and full amount. The event and refund state commit together. Processed refunds use the same finalizer as admin approval.
 
 **Admin (login and admin role)**
 - `GET` and `POST /admin/teachers`, `PATCH /admin/teachers/:id`: list, create, edit, and set `isActive`.
@@ -186,8 +187,8 @@ All routes are under `/api/v1` except the webhook. Names below are the agreed st
 - `POST /admin/lectures/:id/confirm-upload`: verify the S3 object, save duration in seconds, and set the lecture `ready`.
 - `POST /admin/lectures/:id/preview` returns a temporary signed URL, expiry, and lecture metadata for a ready lecture. The admin lecture list opens an inline player and requests a replacement through this endpoint when the URL expires. Every request checks the current admin role and blocked status. Responses use `Cache-Control: no-store`.
 - `GET /admin/demos`, `POST /admin/demos/upload-url`, `PATCH /admin/demos/:id`, `PATCH /admin/demos/:id/publication`: list, upload an unpublished demo, edit metadata and display order, and toggle publication. Publishing verifies the S3 object.
-- `GET /admin/payments`, `GET /admin/refund-requests`.
-- `POST /admin/refund-requests/:id/approve`, `POST /admin/refund-requests/:id/reject`.
+- `GET /admin/payments` accepts `page` and `pageSize` and returns payments newest first. `GET /admin/refund-requests` accepts a refund `status` filter and returns requests oldest first.
+- `POST /admin/refund-requests/:id/approve` claims a requested or failed refund before calling Razorpay. Pending provider responses remain approved. `POST /admin/refund-requests/:id/reject` requires `adminNote` and only accepts requested refunds.
 
 ### 3.5 Video upload flow
 
@@ -312,6 +313,7 @@ Every failure returns the same structure: an error object with a machine-readabl
 | `NOT_ENROLLED` | no paid enrollment for this lecture's course |
 | `LECTURE_NOT_READY` | lecture is not ready or is hidden |
 | `VALIDATION_FAILED` | request shape is wrong |
+| `CONFLICT` | refund request is ineligible for the requested state change |
 | `NOT_FOUND` | the thing does not exist |
 | `PROFILE_INCOMPLETE` | phone number missing at checkout |
 | `ALREADY_ENROLLED` | the student already owns the course |

@@ -6,8 +6,9 @@ import { AppError } from "../../lib/errors.ts";
 import { logger } from "../../lib/logger.ts";
 import { verifyWebhookSignature } from "../../lib/razorpay.ts";
 import { recordCapture } from "./capture.service.ts";
+import { recordRefundWebhook } from "./refund-webhook.service.ts";
 import { insertWebhookEvent } from "./webhook.repository.ts";
-import { capturedPayment, type webhookPayload } from "./webhook.schemas.ts";
+import { capturedPayment, refundNotification, type webhookPayload } from "./webhook.schemas.ts";
 
 type Webhook = {
   rawBody: Buffer;
@@ -28,9 +29,18 @@ export async function recordWebhook({ rawBody, rawPayload, payload, eventId, sig
     orderId: entity?.order_id ?? null,
   };
   const capture = signatureVerified && eventType === "payment.captured" ? capturedPayment.safeParse(rawPayload) : undefined;
+  const refund = signatureVerified && (eventType === "refund.processed" || eventType === "refund.failed")
+    ? refundNotification.safeParse(rawPayload)
+    : undefined;
   const inserted = capture?.success
     ? await recordCapture(event, capture.data)
-    : await insertWebhookEvent({ ...event, errorNote: capture && "Captured payment details could not be validated." });
+    : refund?.success
+      ? await recordRefundWebhook(event, refund.data, requestId)
+      : await insertWebhookEvent({
+        ...event,
+        errorNote: capture ? "Captured payment details could not be validated."
+          : refund ? "Refund event details could not be validated." : undefined,
+      });
   if (inserted) {
     logger.info(JSON.stringify({ requestId, eventId, eventType, signature_verified: signatureVerified }));
   }

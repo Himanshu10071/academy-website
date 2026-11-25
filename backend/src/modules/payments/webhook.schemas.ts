@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { PAYMENT_STATUS } from "@academy/shared";
 
+import { refundEntity } from "../../lib/razorpay.ts";
+
 export const webhookPayload = z.object({
   event: z.string().refine((value) => value.trim().length > 0),
   payload: z.object({
@@ -30,4 +32,9 @@ export const capturedPayment = z.object({
       }),
     }),
   }),
+});
+
+export const refundNotification = z.object({
+  event: z.enum(["refund.processed", "refund.failed"]),
+  payload: z.object({ refund: z.object({ entity: refundEntity }) }),
 });

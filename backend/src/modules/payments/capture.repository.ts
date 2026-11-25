@@ -27,10 +27,3 @@ export async function capturePayment(client: PoolClient, paymentId: string, prov
 export async function activateEnrollment(client: PoolClient, enrollmentId: string) {
   await client.query("UPDATE public.enrollments SET status = $2 WHERE id = $1", [enrollmentId, ENROLLMENT_STATUS.PAID]);
 }
-
-export async function finishCaptureEvent(client: PoolClient, id: string, errorNote: string | null = null) {
-  await client.query(
-    "UPDATE public.payment_events SET processed = $2, error_note = $3 WHERE payment_event_id = $1",
-    [id, errorNote === null, errorNote],
-  );
-}

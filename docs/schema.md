@@ -25,3 +25,5 @@ Checkout locks the student's profile before reading enrollment and order state. 
 ## Refund requests
 
 The student request derives the owner, course, and full amount from a captured payment and its paid enrollment. The existing partial unique index allows one open request per payment.
+
+`razorpay_attempt_key` stores the provider idempotency key for the current attempt. An uncertain API outcome keeps that key. A confirmed failure rotates it, and pending responses can store their provider refund ID in `razorpay_refund_id`. Finalization writes the refund, payment, and enrollment statuses and timestamps in one transaction.

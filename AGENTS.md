@@ -79,7 +79,7 @@ Nine tables. Full field list lives in `docs/schema.md` and the migration files. 
 - `demo_lectures`: standalone, published flag, display order.
 - `enrollments`: student plus course, status `pending`, `paid`, or `revoked`.
 - `payments`: one per payment attempt, linked to an enrollment. Amount is a snapshot of the price at order time.
-- `payment_events`: log of Razorpay webhook deliveries. The raw payload stays immutable. Capture handling updates only the processing fields.
+- `payment_events`: log of Razorpay webhook deliveries. The raw payload stays immutable. Capture and refund handling update only the processing fields.
 - `refund_requests`: linked to a payment, with its own status lifecycle.
 
 Key constraints the database enforces:
@@ -131,7 +131,7 @@ Row Level Security is **enabled on every table with no policies**, and the Supab
 4. The Razorpay checkout runs in the browser. The success callback opens the confirmation page, which polls enrollment status. A paid response triggers a redirect to the current course and a one-time success toast.
 
 ### 9.4 Razorpay webhook
-The receiver verifies and records deliveries and applies verified `payment.captured` events.
+The receiver verifies and records deliveries and applies verified `payment.captured`, `refund.processed`, and `refund.failed` events.
 
 1. Use the **raw request body**. Compute HMAC-SHA256 with the webhook secret and compare to the `X-Razorpay-Signature` header using a constant-time comparison.
 2. Require the event ID and signature headers and a valid JSON event. Store each accepted delivery with `signature_verified` true or false and `processed = false`. Return 400 for a bad signature after storing its event.
@@ -143,9 +143,9 @@ The receiver verifies and records deliveries and applies verified `payment.captu
 ### 9.5 Refunds
 1. Student requests a refund. Allowed only if: the payment is `captured`, the request time is at or before `refund_eligible_until`, the enrollment is `paid`, and no open request exists for that payment. The reason is required.
 2. An admin approves or rejects (with a note shown to the student).
-3. On approval, the backend calls the Razorpay refund API. On success, in one transaction: the refund request becomes `processed`, the payment becomes `refunded`, and the enrollment becomes `revoked` with `revoked_at`.
-4. If the Razorpay call fails, the request becomes `failed` with an error note so an admin can see and retry it.
-5. The refund amount defaults to the full payment amount.
+3. A conditional update claims the approval before the backend calls Razorpay for the full saved amount. A pending Razorpay refund leaves the request approved.
+4. A processed refund updates the request, payment, and enrollment in one transaction. Their statuses become `processed`, `refunded`, and `revoked` respectively.
+5. Failed requests include a note and can be retried by an admin. Uncertain retries reuse the saved Razorpay attempt key. A confirmed failure rotates the key.
 
 ## 10. Conventions
 

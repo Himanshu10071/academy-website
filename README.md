@@ -13,7 +13,7 @@ Run these commands in separate terminals from the repository root.
 
 ## Connect Supabase for Google sign-in
 
-1. Apply [the initial migration](supabase/migrations/initial_schema.sql) to your Supabase project before signing in.
+1. Apply [the initial migration](supabase/migrations/initial_schema.sql), then the timestamped migrations in `supabase/migrations/` in order.
 2. Enable Google as the only sign-in provider in Supabase Auth. Use the Supabase callback URL shown in the Google provider settings as the authorized redirect URI in Google Cloud. Set the Supabase Site URL to `http://localhost:3000` and allow `http://localhost:3000/` as a redirect URL for local development.
 3. Open the project's **Integrations → Data API** settings and disable the Data API. Supabase Auth handles Google sign-in separately. [Supabase data security guide](https://supabase.com/docs/guides/database/secure-data)
 4. Copy `backend/.env.example` to `backend/.env` if needed. Set `SUPABASE_URL`, `SUPABASE_ANON_KEY` (anon or publishable key), and `DATABASE_URL`. Set `FRONTEND_URL` to your frontend origin and fill in the remaining backend settings from the template. Use the **Session pooler** URL from Supabase's **Connect** dialog on IPv4-only networks. Replace the password placeholder with your URL-encoded database password. [Supabase connection guide](https://supabase.com/docs/guides/database/connecting-to-postgres)
@@ -32,7 +32,7 @@ In the bucket's CORS settings, allow `PUT` from the app's frontend origin (for e
 
 Playback uses short-lived S3 GET URLs until CloudFront is configured. The backend AWS identity needs `s3:GetObject` for the lecture and demo objects. Set `SIGNED_URL_TTL_SECONDS` in the backend if you need a shorter expiry for testing. The default is 900 seconds. Keep the bucket private.
 
-For catalog integration tests, point `DATABASE_URL_TEST` to a separate PostgreSQL database with `test` as a segment in its name and the initial schema applied. The tests use dedicated fixtures and mock Supabase Auth and S3. Never set this to the application database.
+For integration tests, point `DATABASE_URL_TEST` to a separate PostgreSQL database with `test` as a segment in its name and all migrations applied. The tests use dedicated fixtures and mock external services. Never set this to the application database.
 
 If PostgreSQL reports `SELF_SIGNED_CERT_IN_CHAIN`, download the Supabase root certificate from **Database Settings → SSL Configuration**. In `DATABASE_URL`, set `sslmode=verify-full` and `sslrootcert` to the URL-encoded certificate path. Resolve relative paths from the backend working directory. [Supabase SSL guide](https://supabase.com/docs/guides/platform/ssl-enforcement)
 
@@ -43,7 +43,9 @@ If PostgreSQL reports `SELF_SIGNED_CERT_IN_CHAIN`, download the Supabase root ce
 3. From the repository root, run `npm run tunnel` and copy the printed `https://*.trycloudflare.com` address. The tunnel uses `PORT` from `backend/.env`. [Cloudflare Quick Tunnels](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/)
 4. In Razorpay Test Mode, set the webhook URL to that address followed by `/api/webhooks/razorpay` and enter the same webhook secret. Update the dashboard URL every time the tunnel restarts and prints a new address. [Razorpay webhook testing guide](https://razorpay.com/docs/webhooks/validate-test)
 
-Subscribe to `payment.captured` and enable automatic capture in Razorpay. Verified captures for matching academy orders are marked processed and grant the enrollment. Other deliveries are recorded for inspection. [Razorpay payment webhooks](https://razorpay.com/docs/webhooks/payments/)
+Subscribe to `payment.captured`, `refund.processed`, and `refund.failed` and enable automatic capture in Razorpay. Verified captures for matching academy orders grant the enrollment. Verified full refunds revoke access once Razorpay confirms processing. [Razorpay payment webhooks](https://razorpay.com/docs/webhooks/payments/) · [Razorpay refund webhooks](https://razorpay.com/docs/webhooks/refunds/)
+
+For an existing database, apply [the refund attempt migration](supabase/migrations/20261125230000_refund_attempt_key.sql) before using admin approvals.
 
 To test from a course page, add the Razorpay Test Mode `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` to `backend/.env`. Add the same public key ID as `NEXT_PUBLIC_RAZORPAY_KEY_ID` in `frontend/.env.local`. Restart both apps, sign in as a student with a phone number, and choose **Buy for** on a published course. Keep the tunnel running until the payment is confirmed. [Razorpay Standard Checkout](https://razorpay.com/docs/payments/payment-gateway/web-integration/standard/integration-steps/)
 
