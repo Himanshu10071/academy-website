@@ -35,3 +35,12 @@ Playback uses short-lived S3 GET URLs until CloudFront is configured. The backen
 For catalog integration tests, point `DATABASE_URL_TEST` to a separate PostgreSQL database with `test` as a segment in its name and the initial schema applied. The tests use dedicated fixtures and mock Supabase Auth and S3. Never set this to the application database.
 
 If PostgreSQL reports `SELF_SIGNED_CERT_IN_CHAIN`, download the Supabase root certificate from **Database Settings → SSL Configuration**. In `DATABASE_URL`, set `sslmode=verify-full` and `sslrootcert` to the URL-encoded certificate path. Resolve relative paths from the backend working directory. [Supabase SSL guide](https://supabase.com/docs/guides/platform/ssl-enforcement)
+
+## Receive Razorpay Test Mode webhooks locally
+
+1. Install `cloudflared` and make it available on your `PATH`. [Cloudflare installation guide](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/downloads/)
+2. Set `RAZORPAY_WEBHOOK_SECRET` in `backend/.env` to the secret you will enter in Razorpay Test Mode. Start the backend with `npm run dev:backend`.
+3. From the repository root, run `npm run tunnel` and copy the printed `https://*.trycloudflare.com` address. The tunnel uses `PORT` from `backend/.env`. [Cloudflare Quick Tunnels](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/)
+4. In Razorpay Test Mode, set the webhook URL to that address followed by `/api/webhooks/razorpay` and enter the same webhook secret. Update the dashboard URL every time the tunnel restarts and prints a new address. [Razorpay webhook testing guide](https://razorpay.com/docs/webhooks/validate-test)
+
+The receiver records deliveries in `payment_events` with `processed = false`.

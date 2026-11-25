@@ -14,6 +14,7 @@ import { profileRoutes } from "./modules/profile/profile.routes.ts";
 import { adminCatalogRoutes, publicCatalogRoutes } from "./modules/catalog/catalog.routes.ts";
 import { uploadRoutes } from "./modules/uploads/uploads.routes.ts";
 import { adminPlaybackRoutes, playbackRoutes } from "./modules/playback/playback.routes.ts";
+import { webhookRoutes } from "./modules/payments/webhook.routes.ts";
 
 export const app = express();
 app.disable("x-powered-by");
@@ -42,6 +43,7 @@ app.use(cors({
   allowedHeaders: ["Authorization", "Content-Type"],
   exposedHeaders: ["x-request-id"],
 }));
+app.use("/api/webhooks", webhookRoutes);
 app.use(express.json());
 
 app.get("/api/v1/health", async (_request, response) => {

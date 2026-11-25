@@ -15,3 +15,7 @@ The profile API exposes `user_name` as `name` and `phone_number` as `phone`. New
 The lecture access query reads `profiles.is_blocked`, `lectures.video_status`, `lectures.is_hidden`, and the caller's enrollment for that lecture's `course_id`. The owned courses endpoint reads paid enrollments only. A playback response uses the video key to sign a temporary URL and exposes no separate key field.
 
 Admin preview reads the caller's `profiles.role` and `profiles.is_blocked` with the lecture metadata and video key. It requires a ready lecture and uses a read-only query with no enrollment lookup or financial writes.
+
+## Razorpay webhook deliveries
+
+The receiver inserts into `payment_events` with `processed = false`. It copies the payment amount when supplied and resolves the optional `payment_id` by matching `payments.razorpay_order_id`. The existing unique index deduplicates verified event IDs. Other rows are read-only during delivery.

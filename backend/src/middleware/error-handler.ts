@@ -11,6 +11,9 @@ export const errorHandler: ErrorRequestHandler = (error: unknown, _request, resp
     if (error.type === "entity.parse.failed" || error.type === "entity.too.large") {
       failure = new AppError(error.type === "entity.too.large" ? 413 : 400, ERROR_CODE.VALIDATION_FAILED, "Invalid request body.");
     }
+    if (error.type === "encoding.unsupported") {
+      failure = new AppError(415, ERROR_CODE.VALIDATION_FAILED, "Unsupported request encoding.");
+    }
   }
   failure ??= new AppError(500, ERROR_CODE.INTERNAL_ERROR, "Something went wrong.");
 

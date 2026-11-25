@@ -96,7 +96,7 @@ Row Level Security is **enabled on every table with no policies**, and the Supab
 ## 8. Security rules (non-negotiable)
 
 1. The backend is the only gate. The frontend never decides access.
-2. Every endpoint requires a logged-in user unless it is deliberately public (course list, course detail, demo lectures).
+2. Every endpoint requires a logged-in user unless it is deliberately public or authenticates the sender through a webhook signature.
 3. **Lecture video access is decided in exactly one function.** Regular playback requires an unblocked user, a `ready` and visible lecture, and a `paid` enrollment for that lecture's course. The dedicated admin preview endpoint allows an unblocked admin to preview a `ready` lecture, including hidden lectures and lectures in unpublished courses. The backend chooses the access mode. Do not copy these checks elsewhere.
 4. Never trust the client for prices, amounts, or statuses. Always read them from the database.
 5. Only the **verified Razorpay webhook** can mark a payment captured or an enrollment paid. The frontend success page only polls the backend for status.
@@ -131,9 +131,11 @@ Row Level Security is **enabled on every table with no policies**, and the Supab
 4. The Razorpay checkout runs in the browser. The browser result is never trusted.
 
 ### 9.4 Razorpay webhook
+The receiver is implemented through verification and event logging. Capture processing is planned for a later milestone.
+
 1. Use the **raw request body**. Compute HMAC-SHA256 with the webhook secret and compare to the `X-Razorpay-Signature` header using a constant-time comparison.
-2. Store the event in `payment_events` with `signature_verified` true or false. Events that fail verification are logged and never acted on.
-3. For verified events, skip anything already processed (event id already seen).
+2. Require the event ID and signature headers and a valid JSON event. Store each accepted delivery with `signature_verified` true or false and `processed = false`. Return 400 for a bad signature after storing its event.
+3. Acknowledge repeated verified event IDs with 200. Unknown event types are stored.
 4. For a captured payment: confirm the order id exists and the amount matches the stored amount, then in **one database transaction** set the payment to `captured` with `paid_at`, set `refund_eligible_until` to `paid_at` plus 3 days, and set the enrollment to `paid`.
 5. Respond with 200 quickly. Unknown event types are stored and ignored, not rejected.
 6. The Razorpay account must use automatic capture so that successful payments reach the captured state.
@@ -164,7 +166,7 @@ Write tests for the dangerous paths. A task touching these is not done without t
 
 - Unauthenticated, blocked, unpaid, pending, and revoked users are refused video access. A paid user is allowed.
 - A lecture that is not `ready` or is hidden is not playable.
-- A forged webhook (bad signature) changes nothing.
+- A forged webhook with valid headers and JSON writes only an unverified event row.
 - A repeated webhook has no additional effect.
 - A webhook with a mismatching amount does not mark anything paid.
 - Double-clicking Buy never creates two active enrollments.
@@ -175,7 +177,7 @@ Write tests for the dangerous paths. A task touching these is not done without t
 
 ## 12. Build order and status
 
-Status: initial schema, authentication and profile completion, admin catalog and S3 uploads, public catalog pages, paid lecture playback, and admin lecture preview are implemented. Playback uses a temporary S3 signer.
+Status: initial schema, authentication and profile completion, admin catalog and S3 uploads, public catalog pages, paid lecture playback, and admin lecture preview are implemented. Playback uses a temporary S3 signer. The Razorpay receiver verifies and records events.
 
 0. Repo setup, this brief, folder layout, environment handling.
 1. Database migrations, RLS on, triggers (updated_at, lecture_count, profile creation).

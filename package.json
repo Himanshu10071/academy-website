@@ -9,6 +9,7 @@
   "scripts": {
     "dev:frontend": "npm run build:shared && npm run dev --workspace=@academy/frontend",
     "dev:backend": "npm run build:shared && npm run dev --workspace=@academy/backend",
+    "tunnel": "node scripts/tunnel.mjs",
     "build:shared": "npm run build --workspace=@academy/shared",
     "build": "npm run build:shared && npm run build --workspace=@academy/frontend --workspace=@academy/backend",
     "typecheck": "npm run typecheck --workspaces"
