@@ -20,6 +20,7 @@ export function playbackError(error: unknown) {
     case ERROR_CODE.LECTURE_NOT_READY: return "This lecture is not available to watch right now.";
     case ERROR_CODE.ACCOUNT_BLOCKED: return "This account is blocked and cannot watch lectures.";
     case ERROR_CODE.AUTH_REQUIRED: return "Sign in with Google to watch this lecture.";
+    case ERROR_CODE.FORBIDDEN: return "This account does not have access to this video.";
     case ERROR_CODE.NOT_FOUND: return "This video is no longer available.";
     default: return "Could not load the video. Please try again.";
   }

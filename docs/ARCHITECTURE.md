@@ -137,7 +137,7 @@ routes  ->  service  ->  repository  ->  database
 
 ### 3.2 The two files that deserve special care
 
-- `modules/playback/access.ts`: contains the single function that decides whether a user may watch a lecture. It allows playback only if the user is not blocked, the lecture is `ready` and not hidden, and the user has a `paid` enrollment for that lecture's course. **Nothing else in the codebase may make this decision.** It is small, has no side effects, and has the most thorough tests in the project.
+- `modules/playback/access.ts` contains the single function that authorizes lecture video access. Routine playback requires an unblocked user, a ready and visible lecture, and a paid enrollment for that course. The admin preview endpoint selects an explicit mode that requires an unblocked admin and a ready lecture. It also covers hidden lectures and lectures in unpublished courses.
 - `modules/payments/webhook.routes.ts`: receives Razorpay events. It must be mounted **before** the JSON body parser, using the raw body, because the signature is computed over the exact raw bytes. Parsing first breaks verification. This is the most common cause of "webhook signature always fails."
 
 ### 3.3 Request lifecycle (the order is fixed)
@@ -184,6 +184,7 @@ All routes are under `/api/v1` except the webhook. Names below are the agreed st
 - `GET /admin/courses/:id/lectures`, `PATCH /admin/lectures/:id`, `PUT /admin/courses/:id/lectures/order`: list, rename or hide, and reorder using the full set of lecture IDs.
 - `POST /admin/lectures/upload-url`: create an uploaded lecture and return a 15-minute S3 MP4 PUT URL and its required headers.
 - `POST /admin/lectures/:id/confirm-upload`: verify the S3 object, save duration in seconds, and set the lecture `ready`.
+- `POST /admin/lectures/:id/preview` returns a temporary signed URL, expiry, and lecture metadata for a ready lecture. The admin lecture list opens an inline player and requests a replacement through this endpoint when the URL expires. Every request checks the current admin role and blocked status. Responses use `Cache-Control: no-store`.
 - `GET /admin/demos`, `POST /admin/demos/upload-url`, `PATCH /admin/demos/:id`, `PATCH /admin/demos/:id/publication`: list, upload an unpublished demo, edit metadata and display order, and toggle publication. Publishing verifies the S3 object.
 - `GET /admin/payments`, `GET /admin/refund-requests`.
 - `POST /admin/refund-requests/:id/approve`, `POST /admin/refund-requests/:id/reject`.

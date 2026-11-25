@@ -7,11 +7,15 @@ import { useCallback, useState, type FormEvent } from "react";
 import { useAdminCatalog } from "../../hooks/use-admin-catalog";
 import { useAdminResource } from "../../hooks/use-admin-resource";
 import { useVideoUpload } from "../../hooks/use-video-upload";
+import { getLecturePreview } from "../../lib/api/playback";
 import { formatDuration } from "../../lib/catalog-format";
+import { useAccount } from "../layout/AccountProvider";
+import { PlaybackVideo } from "../player/PlaybackVideo";
 import { AdminStatus } from "./AdminStatus";
 import { UploadProgress } from "./UploadProgress";
 
 export function LecturesAdmin({ courseId }: { courseId: string }) {
+  const { token } = useAccount();
   const api = useAdminCatalog();
   const load = useCallback(async () => {
     const [course, lectures] = await Promise.all([api.getCourse(courseId), api.listLectures(courseId)]);
@@ -20,6 +24,7 @@ export function LecturesAdmin({ courseId }: { courseId: string }) {
   const { data, setData, busy, error, reload, run } = useAdminResource(load);
   const { upload, progress } = useVideoUpload();
   const [editing, setEditing] = useState<AdminLecture>();
+  const [previewId, setPreviewId] = useState<string>();
   const [notice, setNotice] = useState("");
   const lectures = data?.lectures;
 
@@ -94,8 +99,15 @@ export function LecturesAdmin({ courseId }: { courseId: string }) {
               <strong>{lecture.lectureNumber}. {lecture.name}</strong>
               <p>{lecture.isHidden ? "Hidden" : "Visible"} · {lecture.videoStatus === VIDEO_STATUS.READY ? formatDuration(lecture.duration) : lecture.videoStatus}</p>
             </div>
-            {editing?.id === lecture.id
-              ? <form className="actions" onSubmit={(event) => {
+            <div className="actions">
+              {lecture.videoStatus === VIDEO_STATUS.READY && <button className="button button-secondary" type="button"
+                aria-label={`${previewId === lecture.id ? "Close preview for" : "Preview"} ${lecture.name}`}
+                aria-expanded={previewId === lecture.id}
+                aria-controls={previewId === lecture.id ? `preview-${lecture.id}` : undefined}
+                onClick={() => setPreviewId(previewId === lecture.id ? undefined : lecture.id)}>
+                {previewId === lecture.id ? "Close preview" : "Preview"}
+              </button>}
+              {editing?.id === lecture.id ? <form className="actions" onSubmit={(event) => {
                 event.preventDefault();
                 saveLecture(lecture, { name: String(new FormData(event.currentTarget).get("name")) });
               }}>
@@ -103,13 +115,19 @@ export function LecturesAdmin({ courseId }: { courseId: string }) {
                 <button className="button button-primary" type="submit" disabled={busy}>Save</button>
                 <button className="button button-secondary" type="button" disabled={busy} onClick={() => setEditing(undefined)}>Cancel</button>
               </form>
-              : <div className="actions">
+              : <>
                 <button className="button button-secondary" type="button" disabled={busy || index === 0} onClick={() => move(index, -1)} aria-label={`Move ${lecture.name} up`}>↑</button>
                 <button className="button button-secondary" type="button" disabled={busy || index === data.lectures.length - 1} onClick={() => move(index, 1)} aria-label={`Move ${lecture.name} down`}>↓</button>
                 <button className="button button-secondary" type="button" disabled={busy} onClick={() => setEditing(lecture)}>Rename</button>
                 <button className="button button-quiet" type="button" disabled={busy}
                   onClick={() => saveLecture(lecture, { isHidden: !lecture.isHidden })}>{lecture.isHidden ? "Unhide" : "Hide"}</button>
-              </div>}
+              </>}
+            </div>
+            {token && previewId === lecture.id && lecture.videoStatus === VIDEO_STATUS.READY &&
+              <section className="admin-lecture-preview" id={`preview-${lecture.id}`} aria-labelledby={`preview-heading-${lecture.id}`}>
+                <h3 id={`preview-heading-${lecture.id}`}>Preview {lecture.name}</h3>
+                <PlaybackVideo label={`${lecture.name} preview video`} load={(signal) => getLecturePreview(lecture.id, token, signal)} />
+              </section>}
           </li>)}</ol>
         </section>
       </div>}

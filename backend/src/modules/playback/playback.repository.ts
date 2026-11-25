@@ -10,13 +10,16 @@ export type LectureRow = {
   video_key: string;
   video_status: string;
   is_hidden: boolean;
+};
+
+type LectureAccessRow = LectureRow & {
   is_blocked: boolean | null;
   enrollment_course_id: string | null;
   enrollment_status: string | null;
 };
 
 export async function findLectureAccess(userId: string, lectureId: string) {
-  const { rows } = await database.query<LectureRow>(
+  const { rows } = await database.query<LectureAccessRow>(
     `SELECT l.id, l.lecture_name, l.course_id, c.slug AS course_slug,
             l.video_key, l.video_status, l.is_hidden, p.is_blocked,
             e.course_id AS enrollment_course_id, e.status AS enrollment_status
@@ -32,6 +35,19 @@ export async function findLectureAccess(userId: string, lectureId: string) {
        ) e ON TRUE
       WHERE l.id = $2`,
     [userId, lectureId, ENROLLMENT_STATUS.PAID],
+  );
+  return rows[0];
+}
+
+export async function findLecturePreview(userId: string, lectureId: string) {
+  const { rows } = await database.query<LectureRow & { role: string; is_blocked: boolean }>(
+    `SELECT l.id, l.lecture_name, l.course_id, c.slug AS course_slug,
+            l.video_key, l.video_status, l.is_hidden, p.role, p.is_blocked
+       FROM public.lectures l
+       JOIN public.courses c ON c.id = l.course_id
+       JOIN public.profiles p ON p.id = $1
+      WHERE l.id = $2`,
+    [userId, lectureId],
   );
   return rows[0];
 }

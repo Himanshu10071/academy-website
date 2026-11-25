@@ -234,6 +234,8 @@ a.catalog-card:hover { border-color: #7786b0; }
 }
 .admin-list li:last-child { border-bottom: 0; }
 .admin-list p { margin: .1rem 0 0; color: var(--muted); font-size: .9rem; }
+.admin-lecture-preview { flex-basis: 100%; min-width: 0; }
+.admin-lecture-preview h3 { margin: 0 0 .6rem; font-size: 1rem; }
 .admin-feedback { margin-bottom: 1rem; padding: .65rem 1rem; border: 1px solid #855366; border-radius: .55rem; color: #ffb4b8; }
 .admin-feedback p { margin: 0 0 .3rem; }
 .upload-progress progress { width: 100%; accent-color: var(--accent); }

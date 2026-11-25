@@ -4,9 +4,10 @@ import { logger } from "../../lib/logger.ts";
 import { authenticate, authenticateIdentity } from "../../middleware/authenticate.ts";
 import { validate } from "../../middleware/validate.ts";
 import { playbackIdParams } from "./playback.schemas.ts";
-import { listEnrollments, playDemo, playLecture } from "./playback.service.ts";
+import { listEnrollments, playDemo, playLecture, previewLecture } from "./playback.service.ts";
 
 export const playbackRoutes = Router();
+export const adminPlaybackRoutes = Router();
 const validateId = validate(playbackIdParams, "params");
 
 const logLecturePlayback: RequestHandler = (request, response, next) => {
@@ -22,6 +23,10 @@ const logLecturePlayback: RequestHandler = (request, response, next) => {
 
 playbackRoutes.post("/lectures/:id/playback", logLecturePlayback, authenticateIdentity, validateId, async (_request, response) => {
   response.json(await playLecture(response.locals.userId, response.locals.validatedParams.id));
+});
+
+adminPlaybackRoutes.post("/lectures/:id/preview", logLecturePlayback, validateId, async (_request, response) => {
+  response.json(await previewLecture(response.locals.userId, response.locals.validatedParams.id));
 });
 
 playbackRoutes.post("/demos/:id/playback", validateId, async (_request, response) => {

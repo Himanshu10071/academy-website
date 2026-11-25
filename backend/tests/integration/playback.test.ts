@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { ENROLLMENT_STATUS, ERROR_CODE, VIDEO_STATUS } from "@academy/shared";
+import { ENROLLMENT_STATUS, ERROR_CODE, ROLE, VIDEO_STATUS } from "@academy/shared";
 import request from "supertest";
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { app } from "../../src/app.ts";
 import { database } from "../../src/lib/db.ts";
@@ -24,6 +24,9 @@ vi.mock("../../src/lib/video-signer.ts", () => ({ getPlaybackUrl }));
 const userId = randomUUID();
 const otherId = randomUUID();
 const blockedId = randomUUID();
+const adminId = randomUUID();
+const blockedAdminId = randomUUID();
+const profileIds = [userId, otherId, blockedId, adminId, blockedAdminId];
 const teacherId = randomUUID();
 const paidId = randomUUID();
 const courseIds: string[] = [];
@@ -31,12 +34,12 @@ const demos: string[] = [];
 const url = "https://media.example.test/signed-fixture";
 let prepared = false;
 
-async function course(id = randomUUID()) {
+async function course(id = randomUUID(), published = true) {
   courseIds.push(id);
   await database.query(
     `INSERT INTO public.courses (id, name, slug, description, thumbnail_url, price, teacher_id, is_published)
-     VALUES ($1, 'Playback fixture', $2, 'Sample', 'https://example.test/cover.jpg', 25000, $3, TRUE)`,
-    [id, `playback-${id}`, teacherId],
+     VALUES ($1, 'Playback fixture', $2, 'Sample', 'https://example.test/cover.jpg', 25000, $3, $4)`,
+    [id, `playback-${id}`, teacherId, published],
   );
   return id;
 }
@@ -63,25 +66,35 @@ function play(id: string) {
   return request(app).post(`/api/v1/lectures/${id}/playback`);
 }
 
+function preview(id: string) {
+  return request(app).post(`/api/v1/admin/lectures/${id}/preview`);
+}
+
 describe.skipIf(!testDatabaseUrl)("playback API with PostgreSQL", () => {
   beforeAll(async () => {
     const { rows: [row] } = await database.query<{ name: string }>("SELECT current_database() AS name");
     if (!/(?:^|_)test(?:_|$)/.test(row.name)) throw new Error("DATABASE_URL_TEST must point to a separate test database.");
     prepared = true;
-    for (const id of [userId, otherId, blockedId]) {
+    for (const id of profileIds) {
       await database.query("INSERT INTO auth.users (id, email) VALUES ($1, $2)", [id, `${id}@example.test`]);
     }
-    await database.query("UPDATE public.profiles SET is_blocked = TRUE WHERE id = $1", [blockedId]);
+    await database.query("UPDATE public.profiles SET role = $1 WHERE id = ANY($2::uuid[])", [ROLE.ADMIN, [adminId, blockedAdminId]]);
+    await database.query("UPDATE public.profiles SET is_blocked = TRUE WHERE id = ANY($1::uuid[])", [[blockedId, blockedAdminId]]);
     await database.query("INSERT INTO public.teachers (id, name) VALUES ($1, 'Playback teacher')", [teacherId]);
     await course(paidId);
     await enroll(userId, paidId, ENROLLMENT_STATUS.PAID);
     await enroll(blockedId, paidId, ENROLLMENT_STATUS.PAID);
+    const usersByToken = new Map([
+      ["owner", userId], ["student", otherId], ["blocked", blockedId], ["admin", adminId], ["blocked-admin", blockedAdminId],
+    ]);
     verifyAccessToken.mockImplementation(async (token: string) => {
-      const id = token === "owner" ? userId : token === "blocked" ? blockedId : undefined;
-      return id && { id, app_metadata: { provider: "google" } };
+      const id = usersByToken.get(token);
+      return id && { id, app_metadata: { provider: "google", role: ROLE.ADMIN } };
     });
     getPlaybackUrl.mockResolvedValue(url);
   });
+
+  beforeEach(() => getPlaybackUrl.mockClear());
 
   afterAll(async () => {
     try {
@@ -91,8 +104,8 @@ describe.skipIf(!testDatabaseUrl)("playback API with PostgreSQL", () => {
       await database.query("DELETE FROM public.enrollments WHERE course_id = ANY($1::uuid[])", [courseIds]);
       await database.query("DELETE FROM public.courses WHERE id = ANY($1::uuid[])", [courseIds]);
       await database.query("DELETE FROM public.teachers WHERE id = $1", [teacherId]);
-      await database.query("DELETE FROM public.profiles WHERE id = ANY($1::uuid[])", [[userId, otherId, blockedId]]);
-      await database.query("DELETE FROM auth.users WHERE id = ANY($1::uuid[])", [[userId, otherId, blockedId]]);
+      await database.query("DELETE FROM public.profiles WHERE id = ANY($1::uuid[])", [profileIds]);
+      await database.query("DELETE FROM auth.users WHERE id = ANY($1::uuid[])", [profileIds]);
     } finally {
       await database.end();
     }
@@ -160,6 +173,79 @@ describe.skipIf(!testDatabaseUrl)("playback API with PostgreSQL", () => {
       expect(getPlaybackUrl).toHaveBeenLastCalledWith(target.key, 900);
       expect(log).toHaveBeenCalledWith(`Playback granted requestId=${response.headers["x-request-id"]} userId=${userId} lectureId=${target.id}`);
     } finally { log.mockRestore(); }
+  });
+
+  it.each([
+    { token: undefined, status: 401, code: ERROR_CODE.AUTH_REQUIRED },
+    { token: "invalid", status: 401, code: ERROR_CODE.AUTH_REQUIRED },
+    { token: "blocked-admin", status: 403, code: ERROR_CODE.ACCOUNT_BLOCKED },
+    { token: "owner", status: 403, code: ERROR_CODE.FORBIDDEN },
+    { token: "student", status: 403, code: ERROR_CODE.FORBIDDEN },
+  ])("denies preview before signing for $token", async ({ token, status, code }) => {
+    const target = await lecture(paidId);
+    const attempt = preview(target.id).send({ role: ROLE.ADMIN, purpose: "preview", videoKey: target.key });
+    if (token) attempt.set("Authorization", `Bearer ${token}`);
+    const response = await attempt;
+    expect(response.status).toBe(status);
+    expect(response.body.error.code).toBe(code);
+    expect(getPlaybackUrl).not.toHaveBeenCalled();
+  });
+
+  it.each([VIDEO_STATUS.UPLOADED, VIDEO_STATUS.PROCESSING])("denies an admin preview when the lecture is %s", async (status) => {
+    const target = await lecture(paidId, status);
+    const response = await preview(target.id).set("Authorization", "Bearer admin");
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe(ERROR_CODE.LECTURE_NOT_READY);
+    expect(getPlaybackUrl).not.toHaveBeenCalled();
+  });
+
+  it("validates the ID and refuses to sign unknown lectures", async () => {
+    const malformed = await preview("bad-id").set("Authorization", "Bearer admin");
+    expect(malformed.status).toBe(400);
+    expect(malformed.body.error.code).toBe(ERROR_CODE.VALIDATION_FAILED);
+    const unknown = await preview(randomUUID()).set("Authorization", "Bearer admin");
+    expect(unknown.status).toBe(404);
+    expect(unknown.body.error.code).toBe(ERROR_CODE.NOT_FOUND);
+    expect(getPlaybackUrl).not.toHaveBeenCalled();
+  });
+
+  it("previews a hidden lecture in an unpublished course without creating financial records", async () => {
+    const draftId = await course(randomUUID(), false);
+    const target = await lecture(draftId, VIDEO_STATUS.READY, true);
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const response = await preview(target.id).set("Authorization", "Bearer admin").send({ videoKey: "untrusted.mp4" });
+      expect(response.status).toBe(200);
+      expect(response.headers["cache-control"]).toBe("no-store");
+      expect(response.body).toEqual({ url, expiresAt: expect.any(String), lecture: {
+        id: target.id, name: "Test lesson", courseId: draftId, courseSlug: `playback-${draftId}`,
+      } });
+      expect(getPlaybackUrl).toHaveBeenLastCalledWith(target.key, 900);
+    }
+    expect(getPlaybackUrl).toHaveBeenCalledTimes(2);
+    const enrollments = await database.query("SELECT id FROM public.enrollments WHERE course_id = $1 OR user_id = $2", [draftId, adminId]);
+    expect(enrollments.rows).toEqual([]);
+  });
+
+  it("keeps regular playback enrollment-gated when an admin sends preview input", async () => {
+    const target = await lecture(paidId);
+    const response = await play(target.id).set("Authorization", "Bearer admin").send({ purpose: "preview", role: ROLE.ADMIN });
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe(ERROR_CODE.NOT_ENROLLED);
+    expect(getPlaybackUrl).not.toHaveBeenCalled();
+  });
+
+  it("refuses a replacement preview URL after the admin role is removed", async () => {
+    const target = await lecture(paidId);
+    expect((await preview(target.id).set("Authorization", "Bearer admin")).status).toBe(200);
+    await database.query("UPDATE public.profiles SET role = $1 WHERE id = $2", [ROLE.STUDENT, adminId]);
+    try {
+      const response = await preview(target.id).set("Authorization", "Bearer admin");
+      expect(response.status).toBe(403);
+      expect(response.body.error.code).toBe(ERROR_CODE.FORBIDDEN);
+      expect(getPlaybackUrl).toHaveBeenCalledTimes(1);
+    } finally {
+      await database.query("UPDATE public.profiles SET role = $1 WHERE id = $2", [ROLE.ADMIN, adminId]);
+    }
   });
 
   it("only plays published demos, with no login or video key field", async () => {

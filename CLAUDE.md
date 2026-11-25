@@ -97,7 +97,7 @@ Row Level Security is **enabled on every table with no policies**, and the Supab
 
 1. The backend is the only gate. The frontend never decides access.
 2. Every endpoint requires a logged-in user unless it is deliberately public (course list, course detail, demo lectures).
-3. **Video access is decided in exactly one function**, called from everywhere. It allows playback only if: the user is not blocked, the lecture is `ready` and not hidden, and the user has an enrollment with status `paid` for that lecture's course. Do not copy this check elsewhere.
+3. **Lecture video access is decided in exactly one function.** Regular playback requires an unblocked user, a `ready` and visible lecture, and a `paid` enrollment for that lecture's course. The dedicated admin preview endpoint allows an unblocked admin to preview a `ready` lecture, including hidden lectures and lectures in unpublished courses. The backend chooses the access mode. Do not copy these checks elsewhere.
 4. Never trust the client for prices, amounts, or statuses. Always read them from the database.
 5. Only the **verified Razorpay webhook** can mark a payment captured or an enrollment paid. The frontend success page only polls the backend for status.
 6. The **database connection string** (`DATABASE_URL`), AWS keys, the CloudFront private key, the Razorpay key secret and the webhook secret live only in backend environment variables. They never appear in code, logs, the frontend, commits, or prompts. The Supabase service key is not used anywhere in this project.
@@ -122,6 +122,7 @@ Row Level Security is **enabled on every table with no policies**, and the Supab
 4. The player uses that URL. When it expires, the frontend asks the backend for a new one, which re-runs the access check.
 5. The S3 bucket is private. Unsigned S3 reads are denied. At launch, CloudFront with Origin Access Control will serve videos using CloudFront signed URLs.
 6. MVP uses a single compressed MP4 per lecture served with range requests. Adaptive streaming (HLS) is a possible future upgrade.
+7. Admins can preview ready uploads from the admin lecture list. Preview issues a temporary URL through the same signer and rechecks admin authorization on renewal. It creates no enrollment or payment.
 
 ### 9.3 Purchase
 1. Student asks to buy a course. The backend checks the course is published and the profile is complete.
@@ -169,11 +170,12 @@ Write tests for the dangerous paths. A task touching these is not done without t
 - Double-clicking Buy never creates two active enrollments.
 - A refund requested after the 3-day window is rejected. A second open request for the same payment is rejected.
 - A student cannot use admin endpoints.
+- Admin preview requires an unblocked admin and a ready lecture. It can preview hidden and unpublished content without granting regular course playback.
 
 
 ## 12. Build order and status
 
-Status: initial schema, authentication and profile completion, admin catalog and S3 uploads, public catalog pages, and playback with paid enrollment checks and a temporary S3 signer are implemented.
+Status: initial schema, authentication and profile completion, admin catalog and S3 uploads, public catalog pages, paid lecture playback, and admin lecture preview are implemented. Playback uses a temporary S3 signer.
 
 0. Repo setup, this brief, folder layout, environment handling.
 1. Database migrations, RLS on, triggers (updated_at, lecture_count, profile creation).
