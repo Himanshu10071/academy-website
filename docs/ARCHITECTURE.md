@@ -397,6 +397,10 @@ Test tools: Vitest for unit and integration tests, Supertest for HTTP-level test
 7. New table or column: new migration file, then update `docs/schema.md`.
 8. Finish every task with a short summary: what changed, which files, which tests, and anything that needs a human decision.
 
+### Commit scope
+
+Split work at boundaries reviewers can evaluate independently. For example, commit the Razorpay receiver with its tests and endpoint documentation, then commit the local tunnel script with its README instructions. Group supporting edits within each commit so the review covers one complete change.
+
 ### Slice checklist before calling a task done
 
 - Types check and tests pass.

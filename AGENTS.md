@@ -149,11 +149,7 @@ The receiver is implemented through verification and event logging. Capture proc
 
 ## 10. Conventions
 
-- Group related changes into small, manageable logical commits. Avoid committing every minor change individually, but don't let commits become too large or mix unrelated changes. Use clear, descriptive commit messages.
-
-
-
-
+- Make one independently reviewable change per commit. Split a task when its parts can be reviewed separately. Keep implementation, related tests, and relevant docs together, and group minor edits that support the same change. Each commit should build, pass its relevant tests, and have a descriptive message.
 - Database columns are snake_case. TypeScript uses camelCase. Convert in the data access layer.
 - Validate all input at the route boundary. Reject unknown fields where it matters.
 - Return errors in one consistent shape with proper HTTP status codes. Do not leak internal details.

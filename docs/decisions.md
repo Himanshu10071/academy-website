@@ -7,3 +7,4 @@
 - 2026-11-24 — Use a temporary S3 playback signer for paid lectures and published demos, to be replaced by the CloudFront signer before launch.
 - 2026-11-25 — Add admin lecture preview before Razorpay integration. Unblocked admins can review ready uploads in the admin lecture list, including hidden lectures and lectures in unpublished courses. Preview reuses the temporary playback signer and creates no financial records.
 - 2026-11-25 — Add the Razorpay receiver for signature verification and insert-only event logging. Use a Cloudflare Quick Tunnel for local Test Mode deliveries. Capture and enrollment updates are deferred.
+- 2026-11-25 — Split larger tasks into independently reviewable commits. Keep each change with its related tests and documentation.
