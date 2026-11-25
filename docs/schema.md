@@ -19,3 +19,5 @@ Admin preview reads the caller's `profiles.role` and `profiles.is_blocked` with 
 ## Razorpay webhook deliveries
 
 The receiver inserts into `payment_events` with `processed = false`. It copies the payment amount when supplied and resolves the optional `payment_id` by matching `payments.razorpay_order_id`. The existing unique index deduplicates verified event IDs. Other rows are read-only during delivery.
+
+Checkout locks the student's profile before reading enrollment and order state. A newly created order and its pending enrollment are saved in one transaction. The payment row preserves the course price at order creation so retries reuse the same amount.

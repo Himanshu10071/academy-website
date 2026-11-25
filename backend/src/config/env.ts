@@ -21,6 +21,10 @@ const schema = z.object({
   S3_BUCKET: z.string().trim().min(1),
   SIGNED_URL_TTL_SECONDS: z.coerce.number().int().min(1).max(900).default(900),
   RAZORPAY_WEBHOOK_SECRET: z.string().refine((value) => value.trim().length > 0),
+  RAZORPAY_KEY_ID: z.string().trim().regex(/^rzp_test_[A-Za-z0-9]+$/).or(z.literal("")).optional(),
+  RAZORPAY_KEY_SECRET: z.string().optional(),
+}).refine((value) => Boolean(value.RAZORPAY_KEY_ID) === Boolean(value.RAZORPAY_KEY_SECRET?.trim()), {
+  path: ["RAZORPAY_KEY_SECRET"],
 });
 
 const result = schema.safeParse(process.env);

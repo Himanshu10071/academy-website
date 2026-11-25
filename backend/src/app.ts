@@ -14,6 +14,7 @@ import { profileRoutes } from "./modules/profile/profile.routes.ts";
 import { adminCatalogRoutes, publicCatalogRoutes } from "./modules/catalog/catalog.routes.ts";
 import { uploadRoutes } from "./modules/uploads/uploads.routes.ts";
 import { adminPlaybackRoutes, playbackRoutes } from "./modules/playback/playback.routes.ts";
+import { checkoutRoutes } from "./modules/payments/checkout.routes.ts";
 import { webhookRoutes } from "./modules/payments/webhook.routes.ts";
 
 export const app = express();
@@ -58,6 +59,7 @@ app.get("/api/v1/health", async (_request, response) => {
 app.use("/api/v1", profileRoutes);
 app.use("/api/v1", publicCatalogRoutes);
 app.use("/api/v1", playbackRoutes);
+app.use("/api/v1", checkoutRoutes);
 app.use("/api/v1/admin", authenticate, requireAdmin, adminCatalogRoutes, uploadRoutes, adminPlaybackRoutes);
 app.use((_request, _response, next) => next(new AppError(404, ERROR_CODE.NOT_FOUND, "Route not found.")));
 app.use(errorHandler);

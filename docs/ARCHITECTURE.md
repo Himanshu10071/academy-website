@@ -170,8 +170,8 @@ All routes are under `/api/v1` except the webhook. Names below are the agreed st
 - `PATCH /me`: accepts only `name` and `phone`. Returns the updated profile.
 - `GET /me/enrollments`: course metadata for the caller's paid enrollments only.
 - `POST /lectures/:id/playback`: verifies the Google session, loads profile, lecture, and course enrollment together, and runs the single access rule. Returns the signed URL, expiry, and lecture metadata with cache disabled. The player requests a replacement once for an expired URL and restores its position.
-- `POST /courses/:id/checkout`: requires a phone number on the profile. Reuses a pending enrollment or creates one, creates a payment and a Razorpay order, returns the order id.
-- `GET /courses/:id/enrollment-status`: polled after payment.
+- `POST /courses/:id/checkout` accepts an empty body from a student with a phone number. It returns `{ orderId, amount, currency }` using the amount in paise and INR from the saved order. A retry reuses the pending order.
+- `GET /courses/:id/enrollment-status` returns `{ status, courseSlug }` for the signed-in account. The status is null before an enrollment exists. The current slug is returned for a paid enrollment in a published course.
 - `POST /refund-requests`, `GET /me/refund-requests`.
 
 **Webhook (no login, signature verified)**
@@ -270,7 +270,7 @@ Backend variables:
 - Playback: `SIGNED_URL_TTL_SECONDS` (900 by default, 900 maximum).
 - CloudFront (planned): `CLOUDFRONT_DOMAIN`, `CLOUDFRONT_KEY_PAIR_ID`, `CLOUDFRONT_PRIVATE_KEY`.
 - Razorpay webhook: `RAZORPAY_WEBHOOK_SECRET`
-- Razorpay checkout (planned): `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`
+- Razorpay checkout: `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` enable order creation when both are set. Checkout accepts Test Mode keys in this milestone.
 - Business: `REFUND_WINDOW_DAYS` (3)
 
 Validate the app, database, Supabase Auth, and AWS upload settings at startup. Introduce the CloudFront, Razorpay, and business settings when their features are implemented.
