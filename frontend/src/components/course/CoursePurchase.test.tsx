@@ -43,6 +43,7 @@ it("lets a paid student jump to the curriculum even without a phone", () => {
   vi.mocked(useAccount).mockReturnValue({ ...account, profile: { ...account.profile!, phone: null } });
   vi.mocked(useOwnedCourses).mockReturnValue({ token: "test-token", courses: [{
     ...course, name: "Maths", teacherName: "Teacher", thumbnailUrl: null, lectureCount: 1,
+    paymentId: null, refundEligibleUntil: null, hasOpenRefund: false,
   }] });
   render(<CoursePurchase course={course} />);
   expect(screen.getByRole("link", { name: "Go to course" }).getAttribute("href")).toBe("#curriculum-heading");

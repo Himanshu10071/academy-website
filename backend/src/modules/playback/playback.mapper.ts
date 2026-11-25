@@ -17,5 +17,7 @@ export function mapOwnedCourse(row: OwnedCourseRow): OwnedCourse {
   return {
     id: row.id, name: row.name, slug: row.slug, thumbnailUrl: row.thumbnail_url,
     teacherName: row.teacher_name, lectureCount: row.lecture_count,
+    paymentId: row.payment_id, refundEligibleUntil: row.refund_eligible_until?.toISOString() ?? null,
+    hasOpenRefund: row.has_open_refund,
   };
 }

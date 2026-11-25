@@ -272,6 +272,7 @@ describe.skipIf(!testDatabaseUrl)("playback API with PostgreSQL", () => {
       id: paidId, name: "Playback fixture", slug: `playback-${paidId}`,
       thumbnailUrl: "https://example.test/cover.jpg", teacherName: "Playback teacher",
       lectureCount: expect.any(Number),
+      paymentId: null, refundEligibleUntil: null, hasOpenRefund: false,
     }]);
     expect((await request(app).get("/api/v1/me/enrollments")).body.error.code).toBe(ERROR_CODE.AUTH_REQUIRED);
   });

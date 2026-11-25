@@ -7,3 +7,4 @@ export type * from "./types/api.js";
 export type * from "./types/catalog.js";
 export type * from "./types/playback.js";
 export type * from "./types/payments.js";
+export type * from "./types/refunds.js";

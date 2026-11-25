@@ -24,3 +24,5 @@ export const REFUND_STATUS = {
   PROCESSED: "processed",
   FAILED: "failed",
 } as const;
+
+export const OPEN_REFUND_STATUSES = [REFUND_STATUS.REQUESTED, REFUND_STATUS.APPROVED, REFUND_STATUS.FAILED] as const;

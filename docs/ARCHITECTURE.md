@@ -168,11 +168,11 @@ All routes are under `/api/v1` except the webhook. Names below are the agreed st
 **Student (login required)**
 - `GET /me`: returns `id`, `name`, `email`, `phone`, and `role`.
 - `PATCH /me`: accepts only `name` and `phone`. Returns the updated profile.
-- `GET /me/enrollments`: course metadata for the caller's paid enrollments only.
+- `GET /me/enrollments` returns paid courses with the caller's local captured payment ID, refund deadline, and whether a refund request is open.
 - `POST /lectures/:id/playback`: verifies the Google session, loads profile, lecture, and course enrollment together, and runs the single access rule. Returns the signed URL, expiry, and lecture metadata with cache disabled. The player requests a replacement once for an expired URL and restores its position.
 - `POST /courses/:id/checkout` accepts an empty body from a student with a phone number. It returns `{ orderId, amount, currency }` using the amount in paise and INR from the saved order. A retry reuses the pending order.
 - `GET /courses/:id/enrollment-status` returns `{ status, courseSlug }` for the signed-in account. The status is null before an enrollment exists. The current slug is returned for a paid enrollment in a published course.
-- `POST /refund-requests`, `GET /me/refund-requests`.
+- `POST /refund-requests` takes a local payment ID and reason. The backend checks refund eligibility and looks up the amount and owner. `GET /me/refund-requests` returns the caller's refund history.
 
 **Webhook (no login, signature verified)**
 - `POST /api/webhooks/razorpay` receives raw JSON with a 1 MB limit and requires the Razorpay event ID and signature headers. A verified capture checks the saved order, amount and currency, then updates the payment, enrollment and event together. Duplicate verified IDs return 200. Invalid signatures return 400 after logging the delivery. Missing headers or invalid JSON return 400 without inserting an event.

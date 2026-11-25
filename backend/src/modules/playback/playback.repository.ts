@@ -1,4 +1,4 @@
-import { ENROLLMENT_STATUS } from "@academy/shared";
+import { ENROLLMENT_STATUS, OPEN_REFUND_STATUSES, PAYMENT_STATUS } from "@academy/shared";
 
 import { database } from "../../lib/db.ts";
 
@@ -69,17 +69,29 @@ export type OwnedCourseRow = {
   thumbnail_url: string | null;
   teacher_name: string;
   lecture_count: number;
+  payment_id: string | null;
+  refund_eligible_until: Date | null;
+  has_open_refund: boolean;
 };
 
 export async function listPaidCourses(userId: string) {
   const { rows } = await database.query<OwnedCourseRow>(
-    `SELECT c.id, c.name, c.slug, c.thumbnail_url, t.name AS teacher_name, c.lecture_count
+    `SELECT c.id, c.name, c.slug, c.thumbnail_url, t.name AS teacher_name, c.lecture_count,
+            p.id AS payment_id, p.refund_eligible_until,
+            EXISTS (
+              SELECT 1 FROM public.refund_requests r WHERE r.payment_id = p.id AND r.status = ANY($4::text[])
+            ) AS has_open_refund
        FROM public.enrollments e
        JOIN public.courses c ON c.id = e.course_id
        JOIN public.teachers t ON t.id = c.teacher_id
+       LEFT JOIN LATERAL (
+         SELECT id, refund_eligible_until FROM public.payments
+          WHERE enrollment_id = e.id AND user_id = e.user_id AND status = $3
+          ORDER BY paid_at DESC, id LIMIT 1
+       ) p ON TRUE
       WHERE e.user_id = $1 AND e.status = $2
       ORDER BY e.created_at DESC, c.id`,
-    [userId, ENROLLMENT_STATUS.PAID],
+    [userId, ENROLLMENT_STATUS.PAID, PAYMENT_STATUS.CAPTURED, OPEN_REFUND_STATUSES],
   );
   return rows;
 }

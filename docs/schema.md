@@ -21,3 +21,7 @@ Admin preview reads the caller's `profiles.role` and `profiles.is_blocked` with 
 The receiver copies the payment amount when supplied and resolves the optional `payment_id` by matching `payments.razorpay_order_id`. The existing unique index deduplicates verified event IDs. Verified captures lock the payment and enrollment. Successful captures update both rows and mark the event processed in the same transaction. The raw payload is immutable.
 
 Checkout locks the student's profile before reading enrollment and order state. A newly created order and its pending enrollment are saved in one transaction. The payment row preserves the course price at order creation so retries reuse the same amount.
+
+## Refund requests
+
+The student request derives the owner, course, and full amount from a captured payment and its paid enrollment. The existing partial unique index allows one open request per payment.

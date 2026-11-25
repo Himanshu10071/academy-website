@@ -10,4 +10,7 @@ export type OwnedCourse = {
   thumbnailUrl: string | null;
   teacherName: string;
   lectureCount: number;
+  paymentId: string | null;
+  refundEligibleUntil: string | null;
+  hasOpenRefund: boolean;
 };
