@@ -25,10 +25,11 @@ export function AdminGate({ children }: { children: ReactNode }) {
 
   return (
     <main className="container admin-main">
-      <nav className="actions admin-nav" aria-label="Catalog management">
+      <nav className="actions admin-nav" aria-label="Admin navigation">
         <Link className="button button-secondary" href="/admin/teachers">Teachers</Link>
         <Link className="button button-secondary" href="/admin/courses">Courses</Link>
         <Link className="button button-secondary" href="/admin/demos">Demos</Link>
+        <Link className="button button-secondary" href="/admin/payments">Payments</Link>
       </nav>
       <div key={profile?.id}>{children}</div>
     </main>

@@ -239,6 +239,8 @@ Rules:
 - Confirmation polls every three seconds for up to 90 seconds. A paid response redirects to the course slug from the backend or to My Courses and shows the success toast at the destination.
 - Checkout uses the order ID and amount returned by the backend.
 - My Courses shows refund eligibility from the backend and stops offering a request after the deadline. Student refund history lives at `/account/refunds`.
+- The admin Payments page opens on All payments. Its View filter switches to the refund queue, where admins can filter by status and approve, reject, or retry. `/admin/refunds` opens the same page with Refunds selected.
+- Refund revocation stops new playback links. Already-issued links retain the configured expiration.
 
 ---
 

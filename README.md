@@ -50,3 +50,5 @@ For an existing database, apply [the refund attempt migration](supabase/migratio
 To test from a course page, add the Razorpay Test Mode `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` to `backend/.env`. Add the same public key ID as `NEXT_PUBLIC_RAZORPAY_KEY_ID` in `frontend/.env.local`. Restart both apps, sign in as a student with a phone number, and choose **Buy for** on a published course. Keep the tunnel running until the payment is confirmed. [Razorpay Standard Checkout](https://razorpay.com/docs/payments/payment-gateway/web-integration/standard/integration-steps/)
 
 Run the frontend component tests with `npm test --workspace=@academy/frontend`.
+
+Students request refunds from **My Courses** and track them under **Refund requests**. Admins open **Payments** and choose **Refunds** in the View filter to review requests.

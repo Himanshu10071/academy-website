@@ -15,3 +15,4 @@
 - 2026-11-25 — Accept full refund requests within the saved refund window for the caller's captured payment and paid enrollment. Expose the local payment ID and eligibility on owned courses.
 - 2026-11-25 — Keep approved refunds open until Razorpay confirms processing. Use a durable idempotency key for safe retry and a single transaction to revoke enrollment on confirmed refunds.
 - 2026-11-25 — Add the student refund request action to My Courses and show status and admin notes in refund history.
+- 2026-11-25 — Combine admin payment history and the refund queue in one Payments page with a view filter and refund status filter.

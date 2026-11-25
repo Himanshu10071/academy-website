@@ -266,6 +266,22 @@ a.catalog-card:hover { border-color: #7786b0; }
 .admin-feedback { margin-bottom: 1rem; padding: .65rem 1rem; border: 1px solid #855366; border-radius: .55rem; color: #ffb4b8; }
 .admin-feedback p { margin: 0 0 .3rem; }
 .upload-progress progress { width: 100%; accent-color: var(--accent); }
+.payment-filters { margin-bottom: 1rem; }
+.payment-filters label { display: flex; align-items: center; flex-wrap: wrap; gap: .45rem; }
+.payment-filters select {
+  padding: .45rem;
+  border: 1px solid var(--border);
+  border-radius: .5rem;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+.payment-table { overflow-x: auto; }
+.payment-table table { width: 100%; border-collapse: collapse; text-align: left; }
+.payment-table th, .payment-table td { padding: .6rem .75rem; border-bottom: 1px solid var(--border); }
+.payment-table tbody tr:last-child td { border-bottom: 0; }
+.payment-status { text-transform: capitalize; }
+.payment-pagination { margin-top: 1rem; }
 
 @media (max-width: 48rem) {
   .admin-grid, .course-heading { grid-template-columns: 1fr; }

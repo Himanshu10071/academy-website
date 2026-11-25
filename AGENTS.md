@@ -173,7 +173,7 @@ Write tests for the dangerous paths. A task touching these is not done without t
 
 ## 12. Build order and status
 
-Status: initial schema, authentication and profile completion, admin catalog and S3 uploads, public catalog pages, paid lecture playback, admin lecture preview, and Razorpay Test Mode checkout are implemented. Playback uses a temporary S3 signer. Verified captures grant course access.
+Status: initial schema, authentication and profile completion, admin catalog and S3 uploads, public catalog pages, paid lecture playback, admin lecture preview, Razorpay Test Mode checkout, and full refunds are implemented. Playback uses a temporary S3 signer. Verified captures grant course access, and confirmed full refunds revoke it.
 
 0. Repo setup, this brief, folder layout, environment handling.
 1. Database migrations, RLS on, triggers (updated_at, lecture_count, profile creation).
